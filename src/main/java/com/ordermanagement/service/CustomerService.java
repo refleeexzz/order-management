@@ -9,6 +9,8 @@ import com.ordermanagement.exception.ResourceNotFoundException;
 import com.ordermanagement.repository.CustomerRepository;
 import com.ordermanagement.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +21,12 @@ public class CustomerService {
 
     private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
+
+    @Transactional(readOnly = true)
+    public Page<CustomerResponse> findAll(Pageable pageable) {
+        return customerRepository.findAll(pageable)
+                .map(CustomerResponse::fromEntity);
+    }
 
     @Transactional
     public CustomerResponse createForCurrentUser(CreateCustomerRequest request) {
