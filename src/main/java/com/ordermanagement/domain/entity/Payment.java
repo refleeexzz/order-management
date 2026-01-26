@@ -8,9 +8,6 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * Entidade Pagamento
- */
 @Entity
 @Table(name = "payments")
 @Getter
@@ -48,21 +45,15 @@ public class Payment extends BaseEntity {
     @Builder.Default
     private Integer installments = 1;
 
-    /**
-     * Confirma o pagamento
-     */
     public void confirm(String transactionId) {
         this.status = PaymentStatus.PAID;
         this.transactionId = transactionId;
         this.paidAt = LocalDateTime.now();
     }
 
-    /**
-     * Reembolsa o pagamento
-     */
     public void refund() {
         if (this.status != PaymentStatus.PAID) {
-            throw new IllegalStateException("Pagamento não pode ser reembolsado");
+            throw new IllegalStateException("payment cannot be refunded");
         }
         this.status = PaymentStatus.REFUNDED;
         this.refundedAt = LocalDateTime.now();

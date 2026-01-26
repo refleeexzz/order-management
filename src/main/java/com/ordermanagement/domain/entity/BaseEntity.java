@@ -7,10 +7,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
-/**
- * Classe base para todas as entidades
- * Contém campos comuns: id, createdAt, updatedAt
- */
 @MappedSuperclass
 @Getter
 @Setter

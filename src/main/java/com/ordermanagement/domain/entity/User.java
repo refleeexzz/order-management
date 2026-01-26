@@ -10,10 +10,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.List;
 
-/**
- * Entidade de Usuário - responsável pela autenticação
- * Implementa UserDetails do Spring Security
- */
 @Entity
 @Table(name = "users")
 @Getter
@@ -38,8 +34,6 @@ public class User extends BaseEntity implements UserDetails {
 
     @Column(nullable = false)
     private boolean active = true;
-
-    // ============ UserDetails Implementation ============
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

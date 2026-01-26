@@ -9,9 +9,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Entidade Pedido
- */
 @Entity
 @Table(name = "orders")
 @Getter
@@ -80,29 +77,18 @@ public class Order extends BaseEntity {
     @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Payment payment;
 
-    // ============ Métodos de Negócio ============
-
-    /**
-     * Adiciona um item ao pedido
-     */
     public void addItem(OrderItem item) {
         items.add(item);
         item.setOrder(this);
         recalculateTotal();
     }
 
-    /**
-     * Remove um item do pedido
-     */
     public void removeItem(OrderItem item) {
         items.remove(item);
         item.setOrder(null);
         recalculateTotal();
     }
 
-    /**
-     * Recalcula os totais do pedido
-     */
     public void recalculateTotal() {
         this.subtotal = items.stream()
                 .map(OrderItem::getTotal)
@@ -113,45 +99,33 @@ public class Order extends BaseEntity {
                 .add(this.shippingCost != null ? this.shippingCost : BigDecimal.ZERO);
     }
 
-    /**
-     * Confirma o pagamento
-     */
     public void confirmPayment() {
         if (this.status != OrderStatus.PENDING_PAYMENT) {
-            throw new IllegalStateException("Pedido não está aguardando pagamento");
+            throw new IllegalStateException("order is not awaiting payment");
         }
         this.status = OrderStatus.PAID;
         this.paidAt = LocalDateTime.now();
     }
 
-    /**
-     * Envia o pedido
-     */
     public void ship() {
         if (this.status != OrderStatus.PAID && this.status != OrderStatus.PROCESSING) {
-            throw new IllegalStateException("Pedido não pode ser enviado no status atual");
+            throw new IllegalStateException("order cannot be shipped in current status");
         }
         this.status = OrderStatus.SHIPPED;
         this.shippedAt = LocalDateTime.now();
     }
 
-    /**
-     * Marca como entregue
-     */
     public void deliver() {
         if (this.status != OrderStatus.SHIPPED) {
-            throw new IllegalStateException("Pedido não foi enviado ainda");
+            throw new IllegalStateException("order hasn't been shipped yet");
         }
         this.status = OrderStatus.DELIVERED;
         this.deliveredAt = LocalDateTime.now();
     }
 
-    /**
-     * Cancela o pedido
-     */
     public void cancel() {
         if (this.status == OrderStatus.DELIVERED) {
-            throw new IllegalStateException("Pedido já foi entregue, não pode ser cancelado");
+            throw new IllegalStateException("order already delivered, cannot be cancelled");
         }
         this.status = OrderStatus.CANCELLED;
         this.cancelledAt = LocalDateTime.now();

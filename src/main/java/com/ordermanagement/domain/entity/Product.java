@@ -5,9 +5,6 @@ import lombok.*;
 
 import java.math.BigDecimal;
 
-/**
- * Entidade Produto
- */
 @Entity
 @Table(name = "products")
 @Getter
@@ -42,26 +39,17 @@ public class Product extends BaseEntity {
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
-    /**
-     * Verifica se há estoque disponível
-     */
     public boolean hasStock(int quantity) {
         return this.stockQuantity >= quantity;
     }
 
-    /**
-     * Reduz o estoque
-     */
     public void decreaseStock(int quantity) {
         if (!hasStock(quantity)) {
-            throw new IllegalStateException("Estoque insuficiente para o produto: " + name);
+            throw new IllegalStateException("insufficient stock for product: " + name);
         }
         this.stockQuantity -= quantity;
     }
 
-    /**
-     * Aumenta o estoque
-     */
     public void increaseStock(int quantity) {
         this.stockQuantity += quantity;
     }

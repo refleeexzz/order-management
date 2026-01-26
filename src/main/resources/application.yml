@@ -2,12 +2,15 @@ spring:
   application:
     name: order-management
 
-  # Configuração do PostgreSQL
+  # postgresql config
   datasource:
-    url: jdbc:postgresql://localhost:5432/order_management
+    url: jdbc:postgresql://localhost:5433/order_management
     username: postgres
-    password: postgres123
+    password: ${DB_PASSWORD:postgres123}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
 
   # JPA / Hibernate
   jpa:

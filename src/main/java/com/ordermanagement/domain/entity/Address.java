@@ -4,10 +4,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.*;
 
-/**
- * Classe embutida para endereço
- * Será armazenada na mesma tabela da entidade pai
- */
 @Embeddable
 @Getter
 @Setter

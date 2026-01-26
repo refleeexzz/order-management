@@ -5,9 +5,6 @@ import lombok.*;
 
 import java.math.BigDecimal;
 
-/**
- * Entidade Item do Pedido
- */
 @Entity
 @Table(name = "order_items")
 @Getter
@@ -34,9 +31,6 @@ public class OrderItem extends BaseEntity {
     @Column(name = "total", nullable = false, precision = 10, scale = 2)
     private BigDecimal total;
 
-    /**
-     * Calcula o total do item
-     */
     @PrePersist
     @PreUpdate
     public void calculateTotal() {

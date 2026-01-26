@@ -6,10 +6,6 @@ import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Entidade Cliente
- * Um usuário pode ter um cliente associado (para compras)
- */
 @Entity
 @Table(name = "customers")
 @Getter

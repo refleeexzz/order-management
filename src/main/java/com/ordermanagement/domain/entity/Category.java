@@ -6,9 +6,6 @@ import lombok.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Entidade Categoria de Produto
- */
 @Entity
 @Table(name = "categories")
 @Getter
