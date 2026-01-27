@@ -4,8 +4,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuthStore } from '../../store';
-import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '../../components/ui';
-import { Package } from 'lucide-react';
+import { Button, Input, Card, CardContent } from '../../components/ui';
+import { Sparkles, Mail, Lock, ArrowRight } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -39,56 +39,123 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 bg-blue-600 rounded-full">
-              <Package className="h-8 w-8 text-white" />
+    <div className="min-h-screen flex">
+      {/* Left Side - Form */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-surface-50">
+        <div className="w-full max-w-md">
+          {/* Logo */}
+          <Link to="/" className="flex items-center gap-3 mb-8">
+            <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center shadow-lg">
+              <Sparkles className="h-6 w-6 text-white" />
+            </div>
+            <span className="text-2xl font-bold font-display text-surface-900">
+              Nova<span className="text-brand-600">Shop</span>
+            </span>
+          </Link>
+
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-surface-900 mb-2 font-display">
+              Bem-vindo de volta!
+            </h1>
+            <p className="text-surface-500">
+              Entre com sua conta para continuar
+            </p>
+          </div>
+
+          <Card className="border-0 shadow-soft">
+            <CardContent className="p-8">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                {(submitError || error) && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-center gap-3">
+                    <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
+                      <span className="text-lg">⚠️</span>
+                    </div>
+                    <p>{submitError || error}</p>
+                  </div>
+                )}
+
+                <Input
+                  id="email"
+                  type="email"
+                  label="Email"
+                  placeholder="seu@email.com"
+                  icon={<Mail className="h-5 w-5" />}
+                  error={errors.email?.message}
+                  {...register('email')}
+                />
+
+                <Input
+                  id="password"
+                  type="password"
+                  label="Senha"
+                  placeholder="••••••••"
+                  icon={<Lock className="h-5 w-5" />}
+                  error={errors.password?.message}
+                  {...register('password')}
+                />
+
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" className="w-4 h-4 rounded border-surface-300 text-brand-600 focus:ring-brand-500" />
+                    <span className="text-sm text-surface-600">Lembrar de mim</span>
+                  </label>
+                  <a href="#" className="text-sm text-brand-600 hover:text-brand-700 font-medium">
+                    Esqueceu a senha?
+                  </a>
+                </div>
+
+                <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>
+                  Entrar
+                  <ArrowRight className="h-5 w-5 ml-2" />
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <p className="text-center text-surface-600 mt-6">
+            Não tem uma conta?{' '}
+            <Link to="/register" className="text-brand-600 hover:text-brand-700 font-semibold">
+              Cadastre-se grátis
+            </Link>
+          </p>
+        </div>
+      </div>
+
+      {/* Right Side - Image/Branding */}
+      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-brand-600 via-brand-700 to-purple-800 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-20 right-20 w-72 h-72 bg-accent-500 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 left-20 w-96 h-96 bg-brand-400 rounded-full blur-3xl" />
+        </div>
+        
+        <div className="relative z-10 flex flex-col items-center justify-center p-12 text-center">
+          <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-8">
+            <Sparkles className="h-10 w-10 text-white" />
+          </div>
+          <h2 className="text-4xl font-bold text-white mb-4 font-display">
+            Sua jornada começa aqui
+          </h2>
+          <p className="text-lg text-brand-100 max-w-md">
+            Milhares de produtos esperando por você. 
+            Entre agora e aproveite ofertas exclusivas.
+          </p>
+          
+          <div className="grid grid-cols-3 gap-6 mt-12">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
+              <p className="text-2xl font-bold text-white">50k+</p>
+              <p className="text-sm text-brand-200">Produtos</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
+              <p className="text-2xl font-bold text-white">5k+</p>
+              <p className="text-sm text-brand-200">Vendedores</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
+              <p className="text-2xl font-bold text-white">98%</p>
+              <p className="text-sm text-brand-200">Satisfação</p>
             </div>
           </div>
-          <CardTitle>Order Management</CardTitle>
-          <p className="text-gray-500 mt-2">Faça login para continuar</p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {(submitError || error) && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                {submitError || error}
-              </div>
-            )}
-
-            <Input
-              id="email"
-              type="email"
-              label="Email"
-              placeholder="seu@email.com"
-              error={errors.email?.message}
-              {...register('email')}
-            />
-
-            <Input
-              id="password"
-              type="password"
-              label="Senha"
-              placeholder="••••••••"
-              error={errors.password?.message}
-              {...register('password')}
-            />
-
-            <Button type="submit" className="w-full" isLoading={isLoading}>
-              Entrar
-            </Button>
-
-            <p className="text-center text-sm text-gray-600">
-              Não tem uma conta?{' '}
-              <Link to="/register" className="text-blue-600 hover:underline">
-                Cadastre-se
-              </Link>
-            </p>
-          </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

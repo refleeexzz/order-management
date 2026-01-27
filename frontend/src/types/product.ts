@@ -13,6 +13,7 @@ export interface Product {
   sku: string;
   active: boolean;
   category: Category;
+  imageUrl?: string;
   createdAt: string;
   updatedAt: string;
 }

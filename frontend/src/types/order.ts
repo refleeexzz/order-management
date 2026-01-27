@@ -8,6 +8,7 @@ export interface OrderItem {
   product: Product;
   quantity: number;
   unitPrice: number;
+  price: number;
   totalPrice: number;
 }
 
