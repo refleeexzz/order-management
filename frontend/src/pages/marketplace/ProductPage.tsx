@@ -68,7 +68,7 @@ export function ProductPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="w-full max-w-none mx-auto px-4 py-8 sm:px-6 lg:px-10 xl:px-14 2xl:px-20">
         <div className="animate-pulse">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="aspect-square bg-surface-100 rounded-2xl" />
@@ -87,7 +87,7 @@ export function ProductPage() {
 
   if (error || !product) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-20 text-center">
+      <div className="w-full max-w-none mx-auto px-4 py-20 text-center sm:px-6 lg:px-10 xl:px-14 2xl:px-20">
         <div className="w-20 h-20 bg-surface-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
           <ShoppingCart className="h-10 w-10 text-surface-400" />
         </div>
@@ -108,7 +108,7 @@ export function ProductPage() {
   const installmentValue = product.price / installments;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 animate-fade-in">
+    <div className="w-full max-w-none mx-auto px-4 py-8 animate-fade-in sm:px-6 lg:px-10 xl:px-14 2xl:px-20">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-surface-500 mb-6">
         <Link to="/" className="hover:text-brand-600 transition-colors">Início</Link>

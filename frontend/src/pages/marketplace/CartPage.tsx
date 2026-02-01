@@ -9,7 +9,7 @@ export function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-20">
+      <div className="w-full max-w-none mx-auto px-4 py-20 sm:px-6 lg:px-10 xl:px-14 2xl:px-20">
         <div className="text-center">
           <div className="w-24 h-24 bg-surface-100 rounded-3xl flex items-center justify-center mx-auto mb-6">
             <ShoppingBag className="h-12 w-12 text-surface-400" />
@@ -36,7 +36,7 @@ export function CartPage() {
   const total = subtotal + shipping;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="w-full max-w-none mx-auto px-4 py-8 sm:px-6 lg:px-10 xl:px-14 2xl:px-20">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>

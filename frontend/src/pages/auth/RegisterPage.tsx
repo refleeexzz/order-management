@@ -118,7 +118,7 @@ export function RegisterPage() {
           </div>
 
           <Card className="border-0 shadow-soft">
-            <CardContent className="p-8">
+            <CardContent className="p-6 sm:p-8">
               {success ? (
                 <div className="text-center py-8">
                   <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -128,7 +128,7 @@ export function RegisterPage() {
                   <p className="text-surface-500">Redirecionando para login...</p>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
                   {(submitError || error) && (
                     <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
                       {submitError || error}

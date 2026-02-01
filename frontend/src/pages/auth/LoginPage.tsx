@@ -63,8 +63,8 @@ export function LoginPage() {
           </div>
 
           <Card className="border-0 shadow-soft">
-            <CardContent className="p-8">
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <CardContent className="p-6 sm:p-8">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 {(submitError || error) && (
                   <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-center gap-3">
                     <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">

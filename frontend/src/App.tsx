@@ -50,7 +50,8 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <Toaster position="top-right" richColors />
         <BrowserRouter>
-          <Routes>
+          <div className="flex min-h-screen w-full flex-col">
+            <Routes>
             {/* Public Auth Routes */}
             <Route
               path="/login"
@@ -117,6 +118,7 @@ function App() {
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </div>
         </BrowserRouter>
       </QueryClientProvider>
     </ErrorBoundary>

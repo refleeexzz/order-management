@@ -50,7 +50,7 @@ export function ProductsListPage() {
   const hasFilters = search || categoryId;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="w-full max-w-none mx-auto px-4 py-8 sm:px-6 lg:px-10 xl:px-14 2xl:px-20">
       <div className="flex gap-8">
         {/* Sidebar Filters - Desktop */}
         <aside className="hidden lg:block w-72 shrink-0">

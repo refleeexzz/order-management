@@ -15,28 +15,41 @@ export const api = {
       (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
     }
     
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      ...options,
-      headers,
-    });
-    
-    if (response.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('auth-storage');
-      window.location.href = '/login';
-      throw new Error('Unauthorized');
+    try {
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        ...options,
+        headers,
+      });
+      
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('auth-storage');
+        window.location.href = '/login';
+        throw new Error('Sessão expirada. Faça login novamente.');
+      }
+      
+      if (!response.ok) {
+        let errorMessage = 'Ocorreu um erro na requisição';
+        try {
+          const error = await response.json();
+          errorMessage = error.message || error.error || errorMessage;
+        } catch {
+          errorMessage = `Erro ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+      
+      if (response.status === 204) {
+        return {} as T;
+      }
+      
+      return response.json();
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Erro de conexão. Verifique sua internet.');
     }
-    
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'An error occurred' }));
-      throw new Error(error.message || 'An error occurred');
-    }
-    
-    if (response.status === 204) {
-      return {} as T;
-    }
-    
-    return response.json();
   },
   
   get<T>(endpoint: string) {
