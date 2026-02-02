@@ -31,11 +31,20 @@ public class AuthService {
             throw new DuplicateResourceException("User", "email", request.getEmail());
         }
 
+        UserRole userRole = UserRole.CUSTOMER;
+        if (request.getRole() != null && !request.getRole().isBlank()) {
+            try {
+                userRole = UserRole.valueOf(request.getRole().toUpperCase());
+            } catch (IllegalArgumentException e) {
+                userRole = UserRole.CUSTOMER;
+            }
+        }
+
         User user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(UserRole.CUSTOMER)
+                .role(userRole)
                 .active(true)
                 .build();
 

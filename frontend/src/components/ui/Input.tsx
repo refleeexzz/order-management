@@ -19,7 +19,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative">
           {icon && (
-            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-surface-400 pointer-events-none">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400 pointer-events-none [&>svg]:w-4 [&>svg]:h-4">
               {icon}
             </div>
           )}
@@ -27,12 +27,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={id}
             className={cn(
-              'w-full h-11 px-4 py-2.5 border-2 rounded-xl bg-white placeholder-surface-400 text-surface-900 text-sm',
+              'w-full h-10 px-3 py-2 border-2 rounded-xl bg-white placeholder-surface-400 text-surface-900 text-sm',
               'transition-all duration-200',
               'focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10',
               'disabled:bg-surface-100 disabled:cursor-not-allowed disabled:text-surface-400',
               error ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-surface-200 hover:border-surface-300',
-              icon && 'pl-11',
+              icon && 'pl-10',
               className
             )}
             {...props}
