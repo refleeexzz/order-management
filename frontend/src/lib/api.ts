@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'https://backend-production-00d0.up.railway.app/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://backend-production-00d0.up.railway.app';
 
 export const api = {
   baseUrl: API_URL,
