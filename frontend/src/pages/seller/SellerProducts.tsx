@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import type { PageResponse, Product, Category } from '../../types';
-import { Button, Input, Select, Modal } from '../../components/ui';
+import { Button, Input, Select, Modal, ImageUpload } from '../../components/ui';
 import { formatCurrency } from '../../lib/utils';
 import { toast } from 'sonner';
 
@@ -438,26 +438,12 @@ export function SellerProducts() {
 
           <div>
             <label className="block text-sm font-medium text-surface-700 mb-2">
-              URL da Imagem
+              Imagem do Produto
             </label>
-            <Input
-              type="url"
+            <ImageUpload
               value={formData.imageUrl}
-              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-              placeholder="https://exemplo.com/imagem.jpg"
+              onChange={(url) => setFormData({ ...formData, imageUrl: url })}
             />
-            {formData.imageUrl && (
-              <div className="mt-2">
-                <img 
-                  src={formData.imageUrl} 
-                  alt="Preview" 
-                  className="w-20 h-20 object-cover rounded-xl border border-surface-200"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
-                />
-              </div>
-            )}
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-surface-100">
