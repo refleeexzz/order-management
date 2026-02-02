@@ -71,6 +71,8 @@ application-local.properties
 # environment files
 .env
 .env.local
+.env.production.local
+.env.development.local
 
 # logs
 logs/
@@ -81,3 +83,31 @@ logs/
 *.bak
 *.swp
 *~.nib
+
+# Docker volumes
+postgres_data/
+redis_data/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+
+# Disabled migrations
+*.sql.disabled
+
+# Documentation and test files
+TESTES.md
+DEPLOY-VERCEL.md
+insomnia-collection.json
+.vercel
