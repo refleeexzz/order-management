@@ -30,13 +30,6 @@ export function HomePage() {
     { name: 'Games', icon: '🎮' },
   ];
 
-  const stats = [
-    { label: 'Produtos', value: '50K+' },
-    { label: 'Clientes', value: '150K+' },
-    { label: 'Avaliação', value: '4.9/5' },
-    { label: 'Vendedores', value: '5K+' },
-  ];
-
   return (
     <div className="min-h-screen w-full bg-gray-50">
       {/* Hero */}
@@ -52,7 +45,7 @@ export function HomePage() {
           <p className="mx-auto mb-8 max-w-2xl text-base text-gray-600 sm:text-lg">
             Produtos selecionados, entrega rápida e uma experiência de compra simples, segura e moderna.
           </p>
-          <div className="mb-10 flex flex-col justify-center gap-3 sm:flex-row">
+          <div className="flex flex-col justify-center gap-3 sm:flex-row">
             <Link
               to="/products"
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-6 py-3 font-semibold text-white shadow-sm transition-colors hover:bg-violet-700"
@@ -67,15 +60,6 @@ export function HomePage() {
             >
               Começar a Vender
             </Link>
-          </div>
-
-          <div className="mx-auto grid max-w-4xl grid-cols-2 gap-4 sm:grid-cols-4">
-            {stats.map((stat) => (
-              <div key={stat.label} className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-                <div className="text-xl font-bold text-gray-900">{stat.value}</div>
-                <div className="text-xs text-gray-500">{stat.label}</div>
-              </div>
-            ))}
           </div>
         </div>
       </section>

@@ -11,8 +11,7 @@ import {
   Minus,
   Plus,
   MapPin,
-  Star,
-  Sparkles
+  Package
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import type { Product } from '../../types';
@@ -58,14 +57,6 @@ export function ProductPage() {
     }
   };
 
-  // Mock images for demo (replace with real product images)
-  const productImages = [
-    `https://picsum.photos/seed/${id}/600/600`,
-    `https://picsum.photos/seed/${id}a/600/600`,
-    `https://picsum.photos/seed/${id}b/600/600`,
-    `https://picsum.photos/seed/${id}c/600/600`,
-  ];
-
   if (isLoading) {
     return (
       <div className="w-full max-w-none mx-auto px-4 py-8 sm:px-6 lg:px-10 xl:px-14 2xl:px-20">
@@ -102,8 +93,11 @@ export function ProductPage() {
     );
   }
 
-  const discountPercentage = 12; // Mock discount
-  const originalPrice = product.price * 1.12;
+  // Product images (use real image or empty array for placeholder)
+  const productImages = product.imageUrl 
+    ? [product.imageUrl] 
+    : [];
+
   const installments = Math.ceil(product.price / 100) > 12 ? 12 : Math.ceil(product.price / 100);
   const installmentValue = product.price / installments;
 
@@ -143,11 +137,17 @@ export function ProductPage() {
         <div className="lg:col-span-5">
           <div className="bg-white rounded-2xl shadow-card overflow-hidden sticky top-24">
             <div className="aspect-square relative group">
-              <img
-                src={productImages[selectedImage]}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
+              {productImages.length > 0 ? (
+                <img
+                  src={productImages[selectedImage]}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-surface-50">
+                  <Package className="h-24 w-24 text-surface-300" />
+                </div>
+              )}
               {/* Favorite Button */}
               <button 
                 onClick={() => {
@@ -162,30 +162,25 @@ export function ProductPage() {
               >
                 <Heart className={`h-5 w-5 ${isWishlisted ? 'fill-current' : ''}`} />
               </button>
-
-              {/* Discount Badge */}
-              <div className="absolute top-4 left-4">
-                <span className="bg-gradient-to-r from-accent-500 to-accent-600 text-white text-sm font-bold px-3 py-1.5 rounded-lg shadow-md">
-                  -{discountPercentage}%
-                </span>
-              </div>
             </div>
             {/* Thumbnails */}
-            <div className="flex gap-3 p-4">
-              {productImages.map((img, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedImage(index)}
-                  className={`w-16 h-16 rounded-xl overflow-hidden transition-all ${
-                    selectedImage === index 
-                      ? 'ring-2 ring-brand-500 ring-offset-2' 
-                      : 'opacity-60 hover:opacity-100'
-                  }`}
-                >
-                  <img src={img} alt="" className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
+            {productImages.length > 1 && (
+              <div className="flex gap-3 p-4">
+                {productImages.map((img, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedImage(index)}
+                    className={`w-16 h-16 rounded-xl overflow-hidden transition-all ${
+                      selectedImage === index 
+                        ? 'ring-2 ring-brand-500 ring-offset-2' 
+                        : 'opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={img} alt="" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -195,39 +190,15 @@ export function ProductPage() {
             {/* Condition & Sales */}
             <div className="flex items-center gap-2 text-sm text-surface-500 mb-3">
               <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-medium">Novo</span>
-              <span className="text-surface-300">|</span>
-              <span>+500 vendidos</span>
             </div>
 
             {/* Title */}
-            <h1 className="text-xl font-bold text-surface-900 mb-4 font-display leading-tight">
+            <h1 className="text-xl font-bold text-surface-900 mb-6 font-display leading-tight">
               {product.name}
             </h1>
 
-            {/* Rating */}
-            <div className="flex items-center gap-3 mb-6">
-              <div className="flex items-center gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star 
-                    key={star} 
-                    className={`h-5 w-5 ${star <= 4 ? 'fill-amber-400 text-amber-400' : 'text-surface-200'}`} 
-                  />
-                ))}
-              </div>
-              <span className="text-sm font-semibold text-surface-700">4.5</span>
-              <span className="text-sm text-surface-400">(127 avaliações)</span>
-            </div>
-
             {/* Price */}
             <div className="mb-6 p-4 bg-gradient-to-r from-brand-50 to-purple-50 rounded-xl">
-              <div className="flex items-center gap-3 mb-1">
-                <span className="text-sm text-surface-500 line-through">
-                  {formatCurrency(originalPrice)}
-                </span>
-                <span className="text-sm text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full">
-                  {discountPercentage}% OFF
-                </span>
-              </div>
               <p className="text-3xl font-bold text-surface-900">
                 {formatCurrency(product.price)}
               </p>
@@ -356,30 +327,6 @@ export function ProductPage() {
                 <p className="text-surface-600">Chegará em 5-8 dias úteis</p>
               </div>
             </div>
-          </div>
-
-          {/* Seller Info */}
-          <div className="bg-white rounded-2xl shadow-card p-5">
-            <h3 className="font-bold text-surface-900 mb-4 font-display">Vendedor</h3>
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-brand-500 to-brand-600 rounded-xl flex items-center justify-center">
-                <Sparkles className="h-7 w-7 text-white" />
-              </div>
-              <div>
-                <p className="font-semibold text-surface-900">MegaLoja Oficial</p>
-                <div className="flex items-center gap-1 text-sm">
-                  <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                  <span className="font-medium text-surface-700">98%</span>
-                  <span className="text-surface-500">de reputação</span>
-                </div>
-              </div>
-            </div>
-            <Link 
-              to="/seller/megaloja" 
-              className="text-sm text-brand-600 hover:text-brand-700 font-medium"
-            >
-              Ver mais produtos do vendedor →
-            </Link>
           </div>
 
           {/* Guarantee */}

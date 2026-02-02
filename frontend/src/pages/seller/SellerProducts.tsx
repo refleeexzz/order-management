@@ -29,6 +29,7 @@ export function SellerProducts() {
     stockQuantity: '',
     sku: '',
     categoryId: '',
+    imageUrl: '',
   });
 
   const { data: products, isLoading } = useQuery({
@@ -49,7 +50,10 @@ export function SellerProducts() {
   const createProduct = useMutation({
     mutationFn: (data: typeof formData) =>
       api.post('/api/products', {
-        ...data,
+        name: data.name,
+        description: data.description,
+        sku: data.sku,
+        imageUrl: data.imageUrl || null,
         price: parseFloat(data.price),
         stockQuantity: parseInt(data.stockQuantity),
         categoryId: parseInt(data.categoryId),
@@ -67,7 +71,10 @@ export function SellerProducts() {
   const updateProduct = useMutation({
     mutationFn: (data: { id: number; formData: typeof formData }) =>
       api.put(`/api/products/${data.id}`, {
-        ...data.formData,
+        name: data.formData.name,
+        description: data.formData.description,
+        sku: data.formData.sku,
+        imageUrl: data.formData.imageUrl || null,
         price: parseFloat(data.formData.price),
         stockQuantity: parseInt(data.formData.stockQuantity),
         categoryId: parseInt(data.formData.categoryId),
@@ -103,6 +110,7 @@ export function SellerProducts() {
         stockQuantity: product.stockQuantity.toString(),
         sku: product.sku || '',
         categoryId: product.category?.id?.toString() || '',
+        imageUrl: product.imageUrl || '',
       });
     } else {
       setEditingProduct(null);
@@ -113,6 +121,7 @@ export function SellerProducts() {
         stockQuantity: '',
         sku: '',
         categoryId: '',
+        imageUrl: '',
       });
     }
     setIsModalOpen(true);
@@ -257,11 +266,17 @@ export function SellerProducts() {
                   <tr key={product.id} className="hover:bg-surface-50 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        <img
-                          src={`https://picsum.photos/seed/${product.id}/48/48`}
-                          alt={product.name}
-                          className="w-12 h-12 rounded-xl object-cover shadow-sm"
-                        />
+                        {product.imageUrl ? (
+                          <img
+                            src={product.imageUrl}
+                            alt={product.name}
+                            className="w-12 h-12 rounded-xl object-cover shadow-sm"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-xl bg-surface-100 flex items-center justify-center">
+                            <Package className="h-6 w-6 text-surface-400" />
+                          </div>
+                        )}
                         <div>
                           <p className="font-medium text-surface-900">{product.name}</p>
                           <p className="text-sm text-surface-500">SKU: {product.sku || 'N/A'}</p>
@@ -419,6 +434,30 @@ export function SellerProducts() {
                 ))}
               </Select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-surface-700 mb-2">
+              URL da Imagem
+            </label>
+            <Input
+              type="url"
+              value={formData.imageUrl}
+              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+              placeholder="https://exemplo.com/imagem.jpg"
+            />
+            {formData.imageUrl && (
+              <div className="mt-2">
+                <img 
+                  src={formData.imageUrl} 
+                  alt="Preview" 
+                  className="w-20 h-20 object-cover rounded-xl border border-surface-200"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t border-surface-100">

@@ -1,7 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { 
-  TrendingUp, 
-  TrendingDown, 
   Package, 
   ShoppingCart, 
   DollarSign,
@@ -25,56 +23,49 @@ export function SellerDashboard() {
     queryFn: () => api.get<PageResponse<Order>>('/api/orders?size=5'),
   });
 
-  // Mock stats for demo
-  const stats = {
-    totalSales: 156,
-    totalRevenue: 45890.00,
-    totalProducts: products?.totalElements || 0,
-    pendingOrders: 8,
-    monthlyGrowth: 12.5,
-    views: 3420,
-  };
-
+  // Dados reais baseados nos produtos e pedidos
+  const totalProducts = products?.totalElements || 0;
+  const totalOrders = orders?.totalElements || 0;
   const recentOrders = orders?.content?.slice(0, 5) || [];
+  
+  // Calcular faturamento real dos pedidos
+  const totalRevenue = orders?.content?.reduce((sum, order) => sum + (order.totalAmount || 0), 0) || 0;
+  
+  // Contar produtos com estoque baixo
+  const lowStockCount = products?.content?.filter(p => p.stockQuantity <= 5 && p.stockQuantity > 0).length || 0;
+
+  // Contar pedidos pendentes (PENDING)
+  const pendingOrdersCount = orders?.content?.filter(o => o.status === 'PENDING').length || 0;
 
   const statCards = [
     {
-      title: 'Vendas do Mês',
-      value: stats.totalSales,
-      change: stats.monthlyGrowth,
-      changeLabel: 'vs mês anterior',
+      title: 'Total de Pedidos',
+      value: totalOrders,
       icon: ShoppingCart,
       iconBg: 'bg-emerald-100',
       iconColor: 'text-emerald-600',
-      trend: 'up',
     },
     {
-      title: 'Faturamento',
-      value: formatCurrency(stats.totalRevenue),
-      change: 8.2,
-      changeLabel: 'vs mês anterior',
+      title: 'Faturamento Total',
+      value: formatCurrency(totalRevenue),
       icon: DollarSign,
       iconBg: 'bg-brand-100',
       iconColor: 'text-brand-600',
-      trend: 'up',
     },
     {
-      title: 'Produtos Ativos',
-      value: stats.totalProducts,
-      subtitle: '3 com baixo estoque',
+      title: 'Produtos Cadastrados',
+      value: totalProducts,
+      subtitle: lowStockCount > 0 ? `${lowStockCount} com baixo estoque` : undefined,
       icon: Package,
       iconBg: 'bg-purple-100',
       iconColor: 'text-purple-600',
     },
     {
-      title: 'Visualizações',
-      value: stats.views.toLocaleString(),
-      change: -2.1,
-      changeLabel: 'vs mês anterior',
+      title: 'Pedidos Recentes',
+      value: recentOrders.length,
       icon: Eye,
       iconBg: 'bg-amber-100',
       iconColor: 'text-amber-600',
-      trend: 'down',
     },
   ];
 
@@ -101,24 +92,9 @@ export function SellerDashboard() {
                 <stat.icon className={`h-6 w-6 ${stat.iconColor}`} />
               </div>
             </div>
-            <div className="flex items-center gap-1 mt-4 text-sm">
-              {stat.trend && (
-                <>
-                  {stat.trend === 'up' ? (
-                    <TrendingUp className="h-4 w-4 text-emerald-500" />
-                  ) : (
-                    <TrendingDown className="h-4 w-4 text-red-500" />
-                  )}
-                  <span className={stat.trend === 'up' ? 'text-emerald-600 font-semibold' : 'text-red-600 font-semibold'}>
-                    {stat.change > 0 ? '+' : ''}{stat.change}%
-                  </span>
-                  <span className="text-surface-400">{stat.changeLabel}</span>
-                </>
-              )}
-              {stat.subtitle && (
-                <span className="text-surface-500">{stat.subtitle}</span>
-              )}
-            </div>
+            {stat.subtitle && (
+              <div className="mt-3 text-sm text-surface-500">{stat.subtitle}</div>
+            )}
           </div>
         ))}
       </div>
@@ -242,15 +218,15 @@ export function SellerDashboard() {
             </h3>
             <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="bg-white/60 rounded-xl p-3 border border-amber-200/50">
-                <p className="text-2xl font-bold text-amber-700">{stats.pendingOrders}</p>
+                <p className="text-2xl font-bold text-amber-700">{pendingOrdersCount}</p>
                 <p className="text-sm text-amber-600">Pedidos para enviar</p>
               </div>
               <div className="bg-white/60 rounded-xl p-3 border border-amber-200/50">
-                <p className="text-2xl font-bold text-amber-700">3</p>
+                <p className="text-2xl font-bold text-amber-700">{lowStockCount}</p>
                 <p className="text-sm text-amber-600">Estoque baixo</p>
               </div>
               <div className="bg-white/60 rounded-xl p-3 border border-amber-200/50">
-                <p className="text-2xl font-bold text-amber-700">2</p>
+                <p className="text-2xl font-bold text-amber-700">0</p>
                 <p className="text-sm text-amber-600">Mensagens</p>
               </div>
             </div>

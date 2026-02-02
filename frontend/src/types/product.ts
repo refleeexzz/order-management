@@ -25,6 +25,7 @@ export interface ProductRequest {
   stockQuantity: number;
   sku: string;
   categoryId: number;
+  imageUrl?: string;
 }
 
 export interface PageResponse<T> {

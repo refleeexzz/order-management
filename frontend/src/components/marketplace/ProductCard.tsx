@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Heart, Star, Check } from 'lucide-react';
+import { ShoppingCart, Heart, Check, Package } from 'lucide-react';
 import { formatCurrency } from '../../lib/utils';
 import type { Product } from '../../types';
 import { useCartStore } from '../../store/cartStore';
@@ -19,16 +19,6 @@ export function ProductCard({ product }: ProductCardProps) {
     toast.success('Produto adicionado ao carrinho!');
   };
 
-  const getProductImage = () => {
-    const seed = product.id || Math.floor(Math.random() * 1000);
-    return `https://picsum.photos/seed/product${seed}/400/400`;
-  };
-
-  const imageUrl = product.imageUrl || getProductImage();
-  const rating = 4 + Math.random();
-  const reviewCount = Math.floor(50 + Math.random() * 200);
-  const discount = Math.floor(10 + Math.random() * 30);
-  const originalPrice = product.price * (1 + discount / 100);
   const inStock = product.stockQuantity > 0;
 
   return (
@@ -38,24 +28,25 @@ export function ProductCard({ product }: ProductCardProps) {
     >
       {/* Image */}
       <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-gray-100 to-gray-50">
-        <img
-          src={imageUrl}
-          alt={product.name}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-          onError={(e) => {
-            e.currentTarget.src = `https://picsum.photos/seed/fallback${product.id}/400/400`;
-          }}
-        />
-        
-        {/* Discount Badge */}
-        <div className="absolute left-3 top-3 rounded-lg bg-red-500 px-2.5 py-1 text-xs font-bold text-white shadow-lg">
-          -{discount}%
-        </div>
+        {product.imageUrl ? (
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        ) : (
+          <div className="h-full w-full flex items-center justify-center">
+            <Package className="h-16 w-16 text-gray-300" />
+          </div>
+        )}
 
         {/* Stock Badge */}
         {product.stockQuantity > 0 && product.stockQuantity < 10 && (
-          <div className="absolute left-3 top-10 rounded-lg bg-orange-500 px-2.5 py-1 text-xs font-bold text-white">
+          <div className="absolute left-3 top-3 rounded-lg bg-orange-500 px-2.5 py-1 text-xs font-bold text-white">
             Restam {product.stockQuantity}
           </div>
         )}
@@ -110,30 +101,15 @@ export function ProductCard({ product }: ProductCardProps) {
           {product.name}
         </h3>
 
-        {/* Rating */}
-        <div className="mb-3 flex items-center gap-2">
-          <div className="flex items-center gap-0.5">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`h-3.5 w-3.5 ${
-                  i < Math.floor(rating)
-                    ? 'fill-yellow-400 text-yellow-400'
-                    : 'fill-gray-200 text-gray-200'
-                }`}
-              />
-            ))}
-          </div>
-          <span className="text-xs font-medium text-gray-500">({reviewCount})</span>
-        </div>
+        {/* Description */}
+        {product.description && (
+          <p className="mb-3 line-clamp-2 text-sm text-gray-500">
+            {product.description}
+          </p>
+        )}
 
         {/* Price */}
         <div className="mt-auto space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-400 line-through">
-              {formatCurrency(originalPrice)}
-            </span>
-          </div>
           <div className="text-xl font-bold text-gray-900">
             {formatCurrency(product.price)}
           </div>
