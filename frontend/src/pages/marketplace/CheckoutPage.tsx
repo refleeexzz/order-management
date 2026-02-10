@@ -185,13 +185,12 @@ export function CheckoutPage() {
         </div>
       </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-                [
-                  { id: 'credit', label: 'Crédito', icon: CreditCard },
-                  { id: 'debit', label: 'Débito', icon: CreditCard },
-                  { id: 'pix', label: 'PIX', icon: QrCode },
-                  { id: 'boleto', label: 'Boleto', icon: Building2 },
-                ].map((method) => (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          {/* Step 1: Address */}
+          {step === 1 && (
+            <div className="bg-white rounded-2xl shadow-card p-6 animate-slide-up">
+              <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 bg-brand-100 rounded-xl flex items-center justify-center">
                   <MapPin className="h-5 w-5 text-brand-600" />
                 </div>
@@ -201,6 +200,11 @@ export function CheckoutPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
+                    CEP *
+                  </label>
+                  <Input
                     placeholder="00000-000"
                     value={address.cep}
                     onChange={(e) => handleCepChange(e.target.value)}
