@@ -182,9 +182,9 @@ export function RegisterPage() {
 
                   <p className="text-center text-sm text-surface-500 mt-4">
                     Ao criar sua conta, você concorda com nossos{' '}
-                    <a href="#" className="text-brand-600 hover:underline">Termos de Uso</a>
+                    <span className="text-surface-600 font-medium">Termos de Uso</span>
                     {' '}e{' '}
-                    <a href="#" className="text-brand-600 hover:underline">Política de Privacidade</a>
+                    <span className="text-surface-600 font-medium">Política de Privacidade</span>
                   </p>
                 </form>
               )}

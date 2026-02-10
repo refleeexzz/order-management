@@ -1,5 +1,7 @@
 package com.ordermanagement.dto.auth;
 
+import org.springframework.http.ResponseEntity;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,5 +29,8 @@ public class AuthResponse {
                 .email(email)
                 .role(role)
                 .build();
+
     }
+
 }
+

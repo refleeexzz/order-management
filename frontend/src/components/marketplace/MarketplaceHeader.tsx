@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Search, Menu, X, Sparkles, LogOut, Store, ChevronDown, User, Package } from 'lucide-react';
+import { ShoppingCart, Search, Menu, X, Sparkles, LogOut, Store, ChevronDown, User } from 'lucide-react';
 import { useAuthStore } from '../../store';
 import { useCartStore } from '../../store/cartStore';
 import { useState, useRef, useEffect } from 'react';
@@ -14,10 +14,10 @@ export function MarketplaceHeader() {
   const navigate = useNavigate();
 
   const categories = [
-    { name: 'Eletrônicos', href: '/products?category=eletronicos' },
-    { name: 'Moda', href: '/products?category=moda' },
-    { name: 'Casa & Jardim', href: '/products?category=casa' },
-    { name: 'Esportes', href: '/products?category=esportes' },
+    { name: 'Eletrônicos', href: '/products?search=Eletr%C3%B4nicos' },
+    { name: 'Moda', href: '/products?search=Moda' },
+    { name: 'Casa & Jardim', href: '/products?search=Casa%20%26%20Jardim' },
+    { name: 'Esportes', href: '/products?search=Esportes' },
   ];
 
   useEffect(() => {
@@ -117,14 +117,6 @@ export function MarketplaceHeader() {
                         <p className="truncate text-sm text-gray-500">{user?.email}</p>
                       </div>
                       <div className="py-1">
-                        <Link
-                          to="/orders"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50"
-                        >
-                          <Package className="h-4 w-4 text-gray-400" />
-                          Meus Pedidos
-                        </Link>
                         <Link
                           to="/seller"
                           onClick={() => setUserMenuOpen(false)}

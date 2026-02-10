@@ -99,9 +99,9 @@ export function LoginPage() {
                     <input type="checkbox" className="w-4 h-4 rounded border-surface-300 text-brand-600 focus:ring-brand-500" />
                     <span className="text-sm text-surface-600">Lembrar de mim</span>
                   </label>
-                  <a href="#" className="text-sm text-brand-600 hover:text-brand-700 font-medium">
-                    Esqueceu a senha?
-                  </a>
+                  <span className="text-sm text-surface-500">
+                    Recuperação de senha em breve
+                  </span>
                 </div>
 
                 <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>
@@ -140,18 +140,15 @@ export function LoginPage() {
             Entre agora e aproveite ofertas exclusivas.
           </p>
           
-          <div className="grid grid-cols-3 gap-6 mt-12">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
-              <p className="text-2xl font-bold text-white">50k+</p>
-              <p className="text-sm text-brand-200">Produtos</p>
+          <div className="mt-12 grid gap-4 max-w-md">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-left">
+              <p className="text-sm text-brand-100">Compra segura com proteção ao cliente</p>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
-              <p className="text-2xl font-bold text-white">5k+</p>
-              <p className="text-sm text-brand-200">Vendedores</p>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-left">
+              <p className="text-sm text-brand-100">Entrega rápida e acompanhamento em tempo real</p>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
-              <p className="text-2xl font-bold text-white">98%</p>
-              <p className="text-sm text-brand-200">Satisfação</p>
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-left">
+              <p className="text-sm text-brand-100">Atendimento dedicado quando precisar</p>
             </div>
           </div>
         </div>

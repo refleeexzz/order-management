@@ -97,7 +97,7 @@ export function HomePage() {
             {categories.map((category) => (
               <Link
                 key={category.name}
-                to={`/products?category=${category.name.toLowerCase()}`}
+                to={`/products?search=${encodeURIComponent(category.name)}`}
                 className="rounded-2xl border border-gray-100 bg-white p-5 text-center transition-all hover:-translate-y-1 hover:border-violet-200 hover:shadow-md"
               >
                 <div className="mb-3 text-4xl">{category.icon}</div>

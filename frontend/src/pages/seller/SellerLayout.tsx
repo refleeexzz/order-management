@@ -1,4 +1,4 @@
-import { Outlet, NavLink, Navigate } from 'react-router-dom';
+import { Outlet, NavLink, Navigate, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Package, 
@@ -7,8 +7,7 @@ import {
   Settings,
   Store,
   ChevronRight,
-  Sparkles,
-  TrendingUp
+  Sparkles
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { MarketplaceHeader } from '../../components/marketplace';
@@ -58,32 +57,17 @@ export function SellerLayout() {
                   <div>
                     <p className="font-bold text-lg">{user?.name?.split(' ')[0]}'s Store</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="px-2 py-0.5 bg-accent-500 rounded-full text-xs font-medium">
-                        PRO
-                      </span>
-                      <span className="text-sm text-brand-200">Vendedor verificado</span>
+                      <span className="text-sm text-brand-200">Painel do vendedor</span>
                     </div>
                   </div>
                 </div>
-
-                {/* Quick Stats */}
-                <div className="grid grid-cols-2 gap-3 mt-6">
-                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-emerald-300" />
-                      <span className="text-xs text-white/80">Hoje</span>
-                    </div>
-                    <p className="text-xl font-bold mt-1">12</p>
-                    <p className="text-xs text-white/70">vendas</p>
-                  </div>
-                  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
-                    <div className="flex items-center gap-2">
-                      <BarChart3 className="h-4 w-4 text-accent-300" />
-                      <span className="text-xs text-white/80">Hoje</span>
-                    </div>
-                    <p className="text-xl font-bold mt-1">R$ 1.2k</p>
-                    <p className="text-xs text-white/70">faturado</p>
-                  </div>
+                <div className="mt-6">
+                  <Link
+                    to="/seller/settings"
+                    className="inline-flex items-center justify-center w-full rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20 transition-colors"
+                  >
+                    Configurar loja
+                  </Link>
                 </div>
               </div>
 
@@ -111,13 +95,13 @@ export function SellerLayout() {
               {/* Help Card */}
               <div className="p-4 m-3 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border border-amber-100">
                 <p className="text-sm font-medium text-amber-800 mb-1">Precisa de ajuda?</p>
-                <p className="text-xs text-amber-600 mb-3">Acesse nossa central de suporte</p>
-                <a 
-                  href="#" 
+                <p className="text-xs text-amber-600 mb-3">Acesse dicas rápidas de configuração</p>
+                <Link
+                  to="/seller/settings"
                   className="text-xs font-semibold text-amber-700 hover:text-amber-800"
                 >
-                  Ver tutoriais →
-                </a>
+                  Ir para configurações →
+                </Link>
               </div>
             </div>
           </aside>

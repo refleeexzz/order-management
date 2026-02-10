@@ -11,8 +11,7 @@ import {
   ArrowLeft,
   MapPin,
   Truck,
-  Package,
-  Sparkles
+  Package
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useCartStore } from '../../store/cartStore';
@@ -62,22 +61,26 @@ export function CheckoutPage() {
   const createOrder = useMutation({
     mutationFn: async () => {
       const orderData = {
-        customerId: 1, // Would come from user profile
         items: items.map((item) => ({
           productId: item.product.id,
           quantity: item.quantity,
-          price: item.product.price,
         })),
-        shippingAddress: `${address.street}, ${address.number}${address.complement ? ` - ${address.complement}` : ''}, ${address.neighborhood}, ${address.city} - ${address.state}, ${address.cep}`,
-        paymentMethod,
-        totalAmount: total,
+        shippingAddress: {
+          street: address.street,
+          number: address.number,
+          complement: address.complement,
+          neighborhood: address.neighborhood,
+          city: address.city,
+          state: address.state,
+          zipCode: address.cep,
+        },
       };
       return api.post('/api/orders', orderData);
     },
     onSuccess: () => {
       toast.success('Pedido realizado com sucesso!');
       clearCart();
-      navigate('/orders');
+      navigate('/');
     },
     onError: () => {
       toast.error('Erro ao finalizar pedido. Tente novamente.');
@@ -182,13 +185,13 @@ export function CheckoutPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content */}
-        <div className="lg:col-span-2">
-          {/* Step 1: Address */}
-          {step === 1 && (
-            <div className="bg-white rounded-2xl shadow-card p-6 animate-slide-up">
-              <div className="flex items-center gap-3 mb-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                [
+                  { id: 'credit', label: 'Crédito', icon: CreditCard },
+                  { id: 'debit', label: 'Débito', icon: CreditCard },
+                  { id: 'pix', label: 'PIX', icon: QrCode },
+                  { id: 'boleto', label: 'Boleto', icon: Building2 },
+                ].map((method) => (
                 <div className="w-10 h-10 bg-brand-100 rounded-xl flex items-center justify-center">
                   <MapPin className="h-5 w-5 text-brand-600" />
                 </div>
@@ -198,11 +201,6 @@ export function CheckoutPage() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-surface-700 mb-2">
-                    CEP *
-                  </label>
-                  <Input
                     placeholder="00000-000"
                     value={address.cep}
                     onChange={(e) => handleCepChange(e.target.value)}
@@ -401,9 +399,6 @@ export function CheckoutPage() {
                   <p className="text-surface-700 font-medium">
                     O QR Code será gerado após a confirmação do pedido
                   </p>
-                  <p className="text-sm text-emerald-600 font-semibold mt-2">
-                    🎉 5% de desconto no PIX!
-                  </p>
                 </div>
               )}
 
@@ -472,7 +467,7 @@ export function CheckoutPage() {
                 <p className="text-surface-600 ml-13">
                   {paymentMethod === 'credit' && `Cartão de Crédito em ${cardData.installments}x`}
                   {paymentMethod === 'debit' && 'Cartão de Débito'}
-                  {paymentMethod === 'pix' && 'PIX (5% de desconto)'}
+                  {paymentMethod === 'pix' && 'PIX'}
                   {paymentMethod === 'boleto' && 'Boleto Bancário'}
                 </p>
               </div>
@@ -488,11 +483,17 @@ export function CheckoutPage() {
                 <div className="space-y-4">
                   {items.map((item) => (
                     <div key={item.product.id} className="flex gap-4 p-3 bg-surface-50 rounded-xl">
-                      <img
-                        src={`https://picsum.photos/seed/${item.product.id}/80/80`}
-                        alt={item.product.name}
-                        className="w-16 h-16 rounded-lg object-cover"
-                      />
+                      {item.product.imageUrl ? (
+                        <img
+                          src={item.product.imageUrl}
+                          alt={item.product.name}
+                          className="w-16 h-16 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-lg bg-white flex items-center justify-center">
+                          <Package className="h-5 w-5 text-surface-400" />
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-surface-900 line-clamp-2">
                           {item.product.name}
@@ -535,15 +536,6 @@ export function CheckoutPage() {
                   <span className="font-medium text-surface-900">{formatCurrency(shipping)}</span>
                 )}
               </div>
-              {paymentMethod === 'pix' && (
-                <div className="flex justify-between text-emerald-600">
-                  <span className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4" />
-                    Desconto PIX
-                  </span>
-                  <span className="font-semibold">-{formatCurrency(total * 0.05)}</span>
-                </div>
-              )}
             </div>
 
             <div className="border-t border-surface-100 pt-4 mb-6">
@@ -551,7 +543,7 @@ export function CheckoutPage() {
                 <span className="text-lg font-bold text-surface-900">Total</span>
                 <div className="text-right">
                   <span className="text-2xl font-bold text-surface-900">
-                    {formatCurrency(paymentMethod === 'pix' ? total * 0.95 : total)}
+                    {formatCurrency(total)}
                   </span>
                   {paymentMethod === 'credit' && parseInt(cardData.installments) > 1 && (
                     <p className="text-sm text-surface-500">

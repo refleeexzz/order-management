@@ -116,10 +116,11 @@ export function ProductsListPage() {
 
             {/* Price Range */}
             <div className="pt-6 border-t border-surface-100">
-              <label className="block text-sm font-medium text-surface-700 mb-4">
+              <label className="block text-sm font-medium text-surface-700 mb-2">
                 Faixa de preço
               </label>
-              <div className="space-y-2">
+              <p className="text-xs text-surface-400 mb-4">Em breve</p>
+              <div className="space-y-2 opacity-60">
                 {[
                   { label: 'Até R$ 50', value: '0-50' },
                   { label: 'R$ 50 - R$ 100', value: '50-100' },
@@ -131,6 +132,7 @@ export function ProductsListPage() {
                       type="radio"
                       name="priceRange"
                       className="w-4 h-4 text-brand-600 border-surface-300 focus:ring-brand-500"
+                      disabled
                     />
                     <span className="text-sm text-surface-600 group-hover:text-surface-900">
                       {range.label}
@@ -225,7 +227,18 @@ export function ProductsListPage() {
           {/* Mobile Filters */}
           {showFilters && (
             <div className="lg:hidden bg-white rounded-2xl shadow-card p-6 mb-6 animate-slide-up">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-surface-700 mb-2">
+                    Buscar
+                  </label>
+                  <Input
+                    placeholder="Nome do produto..."
+                    value={search}
+                    onChange={(e) => updateFilter('search', e.target.value)}
+                    icon={<Search className="h-4 w-4" />}
+                  />
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-surface-700 mb-2">
                     Categoria
@@ -256,6 +269,13 @@ export function ProductsListPage() {
                   </Select>
                 </div>
               </div>
+              {hasFilters && (
+                <div className="pt-4 mt-4 border-t border-surface-100">
+                  <Button variant="outline" size="sm" onClick={clearFilters}>
+                    Limpar filtros
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 

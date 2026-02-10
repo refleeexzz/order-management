@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft, Shield, Truck, Tag, ArrowRight } from 'lucide-react';
+import { Trash2, Minus, Plus, ShoppingBag, ArrowLeft, Shield, Truck, Tag, ArrowRight, Package } from 'lucide-react';
 import { useCartStore } from '../../store/cartStore';
 import { Button, Input } from '../../components/ui';
 import { formatCurrency } from '../../lib/utils';
@@ -63,11 +63,17 @@ export function CartPage() {
                   to={`/product/${item.product.id}`}
                   className="shrink-0"
                 >
-                  <img
-                    src={`https://picsum.photos/seed/${item.product.id}/120/120`}
-                    alt={item.product.name}
-                    className="w-28 h-28 object-cover rounded-xl"
-                  />
+                  {item.product.imageUrl ? (
+                    <img
+                      src={item.product.imageUrl}
+                      alt={item.product.name}
+                      className="w-28 h-28 object-cover rounded-xl"
+                    />
+                  ) : (
+                    <div className="w-28 h-28 rounded-xl bg-surface-100 flex items-center justify-center">
+                      <Package className="h-8 w-8 text-surface-400" />
+                    </div>
+                  )}
                 </Link>
 
                 {/* Product Info */}
@@ -228,13 +234,15 @@ export function CartPage() {
               <div className="flex items-center gap-2 mb-3">
                 <Tag className="h-4 w-4 text-surface-500" />
                 <span className="text-sm font-medium text-surface-700">Cupom de desconto</span>
+                <span className="text-xs text-surface-400">(em breve)</span>
               </div>
               <div className="flex gap-2">
                 <Input
                   placeholder="Digite o código"
                   className="text-sm"
+                  disabled
                 />
-                <Button variant="secondary" size="sm">
+                <Button variant="secondary" size="sm" disabled>
                   Aplicar
                 </Button>
               </div>

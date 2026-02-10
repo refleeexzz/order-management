@@ -21,7 +21,9 @@ import {
   SellerLayout, 
   SellerDashboard, 
   SellerProducts, 
-  SellerOrders 
+  SellerOrders,
+  SellerAnalytics,
+  SellerSettings
 } from './pages/seller';
 import { useAuthStore } from './store';
 
@@ -98,6 +100,8 @@ function App() {
               <Route index element={<SellerDashboard />} />
               <Route path="products" element={<SellerProducts />} />
               <Route path="orders" element={<SellerOrders />} />
+              <Route path="analytics" element={<SellerAnalytics />} />
+              <Route path="settings" element={<SellerSettings />} />
             </Route>
 
             {/* Admin Panel (Protected) Routes */}
