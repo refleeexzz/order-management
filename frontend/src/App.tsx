@@ -1,132 +1,43 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'sonner';
-import { MainLayout } from './components/layout';
-import { MarketplaceLayout } from './components/marketplace';
-import { ErrorBoundary } from './components/ErrorBoundary';
-import { LoginPage, RegisterPage } from './pages/auth';
-import { DashboardPage } from './pages/dashboard';
-import { ProductsPage } from './pages/products';
-import { CategoriesPage } from './pages/categories';
-import { CustomersPage } from './pages/customers';
-import { OrdersPage } from './pages/orders';
-import { 
-  HomePage, 
-  ProductsListPage, 
-  ProductPage, 
-  CartPage, 
-  CheckoutPage 
-} from './pages/marketplace';
-import { 
-  SellerLayout, 
-  SellerDashboard, 
-  SellerProducts, 
-  SellerOrders,
-  SellerAnalytics,
-  SellerSettings
-} from './pages/seller';
-import { useAuthStore } from './store';
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Card, CardBody, CardHeader } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
+import { Toaster } from "@/components/Toaster";
+import { toast } from "@/stores/toast";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
-function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuthStore();
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
-}
-
-function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuthStore();
-  return !isAuthenticated ? <>{children}</> : <Navigate to="/admin" replace />;
-}
-
-function App() {
+/** Smoke test do design system — substituído pelo router no marco 2. */
+export default function App() {
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <Toaster position="top-right" richColors />
-        <BrowserRouter>
-          <div className="flex min-h-screen w-full flex-col">
-            <Routes>
-            {/* Public Auth Routes */}
-            <Route
-              path="/login"
-              element={
-                <PublicRoute>
-                  <LoginPage />
-                </PublicRoute>
-              }
-            />
-            <Route
-              path="/register"
-              element={
-                <PublicRoute>
-                  <RegisterPage />
-                </PublicRoute>
-              }
-            />
-
-            {/* Marketplace (Public) Routes */}
-            <Route element={<MarketplaceLayout />}>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/products" element={<ProductsListPage />} />
-              <Route path="/product/:id" element={<ProductPage />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route
-                path="/checkout"
-                element={
-                  <PrivateRoute>
-                    <CheckoutPage />
-                  </PrivateRoute>
-                }
-              />
-            </Route>
-
-            {/* Seller Panel (Protected) Routes */}
-            <Route
-              path="/seller"
-              element={
-                <PrivateRoute>
-                  <SellerLayout />
-                </PrivateRoute>
-              }
-            >
-              <Route index element={<SellerDashboard />} />
-              <Route path="products" element={<SellerProducts />} />
-              <Route path="orders" element={<SellerOrders />} />
-              <Route path="analytics" element={<SellerAnalytics />} />
-              <Route path="settings" element={<SellerSettings />} />
-            </Route>
-
-            {/* Admin Panel (Protected) Routes */}
-            <Route
-              path="/admin"
-              element={
-                <PrivateRoute>
-                  <MainLayout />
-                </PrivateRoute>
-              }
-            >
-              <Route index element={<DashboardPage />} />
-              <Route path="products" element={<ProductsPage />} />
-              <Route path="categories" element={<CategoriesPage />} />
-              <Route path="customers" element={<CustomersPage />} />
-              <Route path="orders" element={<OrdersPage />} />
-            </Route>
-
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+    <main className="mx-auto max-w-3xl px-4 py-12">
+      <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
+        Loja Verde — design system
+      </h1>
+      <p className="mt-2 text-md text-zinc-600">
+        Base do novo frontend: Vite + React 18 + TypeScript + Tailwind.
+      </p>
+      <Card className="mt-8">
+        <CardHeader title="Componentes" description="Tokens aplicados: brand emerald, neutros zinc, radius 4/6/8/12." />
+        <CardBody className="flex flex-col gap-4">
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => toast.success("Tudo certo", "Design system funcionando.")}>
+              Primário
+            </Button>
+            <Button variant="secondary">Secundário</Button>
+            <Button variant="outline">Outline</Button>
+            <Button variant="ghost">Ghost</Button>
+            <Button variant="danger">Perigo</Button>
           </div>
-        </BrowserRouter>
-      </QueryClientProvider>
-    </ErrorBoundary>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="brand">Marca</Badge>
+            <Badge variant="success">Sucesso</Badge>
+            <Badge variant="warning">Aviso</Badge>
+            <Badge variant="error">Erro</Badge>
+            <Badge variant="info">Info</Badge>
+          </div>
+          <Input placeholder="Campo de texto" aria-label="Exemplo" />
+        </CardBody>
+      </Card>
+      <Toaster />
+    </main>
   );
 }
-
-export default App;
