@@ -1,5 +1,9 @@
-# Build output
-target/
+# Go build output
+bin/
+*.exe
+*.test
+*.out
+coverage.out
 
 # IDE
 .idea/
@@ -20,6 +24,7 @@ Thumbs.db
 # Git
 .git/
 .gitignore
+.github/
 
 # Docker
 Dockerfile
@@ -27,10 +32,11 @@ docker-compose*.yml
 
 # Frontend (built separately)
 frontend/
+frontend/node_modules/
 
-# Maven wrapper (will be copied explicitly)
-!.mvn/
-!mvnw
+# Android app (not part of the backend image)
+android/
 
-# Test files
-*.test.java
+# Docs and misc
+README.md
+.vercel
