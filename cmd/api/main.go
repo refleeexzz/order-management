@@ -44,10 +44,16 @@ func main() {
 	userRepo := repository.NewUserRepository(db)
 	categoryRepo := repository.NewCategoryRepository(db)
 	productRepo := repository.NewProductRepository(db)
+	customerRepo := repository.NewCustomerRepository(db)
+	orderRepo := repository.NewOrderRepository(db)
+	paymentRepo := repository.NewPaymentRepository(db)
 	tokenProvider := security.NewTokenProvider(cfg.JWTSecret, cfg.JWTExpirationMs)
 	authService := service.NewAuthService(userRepo, tokenProvider)
 	categoryService := service.NewCategoryService(categoryRepo)
 	productService := service.NewProductService(db, productRepo, categoryService)
+	customerService := service.NewCustomerService(customerRepo)
+	orderService := service.NewOrderService(db, orderRepo, productRepo, customerService, productService)
+	paymentService := service.NewPaymentService(db, paymentRepo, orderRepo)
 
 	app := &handler.App{
 		Config:          cfg,
@@ -57,6 +63,9 @@ func main() {
 		AuthService:     authService,
 		CategoryService: categoryService,
 		ProductService:  productService,
+		CustomerService: customerService,
+		OrderService:    orderService,
+		PaymentService:  paymentService,
 	}
 
 	srv := &http.Server{

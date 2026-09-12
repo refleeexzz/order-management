@@ -26,6 +26,9 @@ type App struct {
 	AuthService     *service.AuthService
 	CategoryService *service.CategoryService
 	ProductService  *service.ProductService
+	CustomerService *service.CustomerService
+	OrderService    *service.OrderService
+	PaymentService  *service.PaymentService
 }
 
 // Router builds the root chi router. Middleware order mirrors Spring
@@ -34,6 +37,9 @@ func (a *App) Router() http.Handler {
 	authHandler := NewAuthHandler(a.AuthService)
 	categoryHandler := NewCategoryHandler(a.CategoryService)
 	productHandler := NewProductHandler(a.ProductService)
+	customerHandler := NewCustomerHandler(a.CustomerService)
+	orderHandler := NewOrderHandler(a.OrderService)
+	paymentHandler := NewPaymentHandler(a.PaymentService)
 
 	r := chi.NewRouter()
 	r.Use(middleware.CORS)
@@ -73,6 +79,41 @@ func (a *App) Router() http.Handler {
 		r.Get("/{id}", productHandler.FindByID)
 		r.With(middleware.RequireRole(domain.UserRoleAdmin)).Put("/{id}", productHandler.Update)
 		r.With(middleware.RequireRole(domain.UserRoleAdmin)).Delete("/{id}", productHandler.Deactivate)
+	})
+
+	// Customers (§4.4). All endpoints require authentication; the list and
+	// get-by-id carry the MANAGER-quirk @PreAuthorize → effectively ADMIN
+	// (SELLER → 403). /me shadows /{id} (chi prefers static segments, like
+	// Spring's exact-match-first).
+	r.Route("/api/customers", func(r chi.Router) {
+		r.With(middleware.RequireRole(domain.UserRoleAdmin)).Get("/", customerHandler.FindAll)
+		r.With(middleware.RequireAuth).Post("/", customerHandler.Create)
+		r.With(middleware.RequireAuth).Get("/me", customerHandler.GetMe)
+		r.With(middleware.RequireAuth).Put("/me", customerHandler.UpdateMe)
+		r.With(middleware.RequireRole(domain.UserRoleAdmin)).Get("/{id}", customerHandler.FindByID)
+	})
+
+	// Orders (§4.5). All endpoints require authentication; admin lists,
+	// status transitions and stats carry the MANAGER quirk (ADMIN only).
+	// Static segments (my-orders, stats, number, status) shadow /{id}.
+	r.Route("/api/orders", func(r chi.Router) {
+		r.With(middleware.RequireAuth).Post("/", orderHandler.Create)
+		r.With(middleware.RequireRole(domain.UserRoleAdmin)).Get("/", orderHandler.FindAll)
+		r.With(middleware.RequireAuth).Get("/my-orders", orderHandler.FindMyOrders)
+		r.With(middleware.RequireRole(domain.UserRoleAdmin)).Get("/stats", orderHandler.GetStats)
+		r.With(middleware.RequireRole(domain.UserRoleAdmin)).Get("/status/{status}", orderHandler.FindByStatus)
+		r.With(middleware.RequireAuth).Get("/number/{orderNumber}", orderHandler.FindByOrderNumber)
+		r.With(middleware.RequireAuth).Get("/{id}", orderHandler.FindByID)
+		r.With(middleware.RequireRole(domain.UserRoleAdmin)).Patch("/{id}/status", orderHandler.UpdateStatus)
+		r.With(middleware.RequireAuth).Post("/{id}/cancel", orderHandler.Cancel)
+	})
+
+	// Payments (§4.6). Processing intentionally has NO ownership check
+	// (Java quirk); refund is hasRole('ADMIN').
+	r.Route("/api/payments", func(r chi.Router) {
+		r.With(middleware.RequireAuth).Post("/", paymentHandler.Process)
+		r.With(middleware.RequireAuth).Get("/order/{orderId}", paymentHandler.FindByOrderID)
+		r.With(middleware.RequireRole(domain.UserRoleAdmin)).Post("/{paymentId}/refund", paymentHandler.Refund)
 	})
 
 	return r

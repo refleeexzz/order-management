@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
@@ -47,6 +48,14 @@ var validate = func() *validator.Validate {
 			return false
 		}
 		return d.GreaterThanOrEqual(min)
+	})
+	// cpf reproduces the @Pattern on CreateCustomerRequest.cpf:
+	// ^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$ (accepts 12345678901 or 123.456.789-01).
+	// Like Jakarta @Pattern, an empty value passes — pair with `notblank`
+	// for @NotBlank + @Pattern parity.
+	cpfRegex := regexp.MustCompile(`^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$`)
+	_ = v.RegisterValidation("cpf", func(fl validator.FieldLevel) bool {
+		return cpfRegex.MatchString(fl.Field().String())
 	})
 	return v
 }()
