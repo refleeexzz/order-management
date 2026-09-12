@@ -1,7 +1,8 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { StorefrontLayout } from "@/components/layout/StorefrontLayout";
+import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Toaster } from "@/components/Toaster";
-import { RequireAuth } from "@/components/auth/Guards";
+import { RequireAuth, RequireAdmin } from "@/components/auth/Guards";
 import { HomePage } from "@/pages/storefront/HomePage";
 import { ProductsPage } from "@/pages/storefront/ProductsPage";
 import { ProductDetailPage } from "@/pages/storefront/ProductDetailPage";
@@ -14,6 +15,11 @@ import { MyOrdersPage } from "@/pages/account/MyOrdersPage";
 import { OrderDetailPage } from "@/pages/account/OrderDetailPage";
 import { ProfilePage } from "@/pages/account/ProfilePage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
+import { AdminDashboardPage } from "@/pages/admin/AdminDashboardPage";
+import { AdminProductsPage } from "@/pages/admin/AdminProductsPage";
+import { AdminCategoriesPage } from "@/pages/admin/AdminCategoriesPage";
+import { AdminOrdersPage } from "@/pages/admin/AdminOrdersPage";
+import { AdminCustomersPage } from "@/pages/admin/AdminCustomersPage";
 
 export default function App() {
   return (
@@ -70,6 +76,21 @@ export default function App() {
             }
           />
           <Route path="*" element={<NotFoundPage />} />
+        </Route>
+        {/* Painel administrativo — somente ADMIN (SELLER recebe 403 da API). */}
+        <Route
+          path="admin"
+          element={
+            <RequireAdmin>
+              <AdminLayout />
+            </RequireAdmin>
+          }
+        >
+          <Route index element={<AdminDashboardPage />} />
+          <Route path="produtos" element={<AdminProductsPage />} />
+          <Route path="categorias" element={<AdminCategoriesPage />} />
+          <Route path="pedidos" element={<AdminOrdersPage />} />
+          <Route path="clientes" element={<AdminCustomersPage />} />
         </Route>
       </Routes>
       <Toaster />
