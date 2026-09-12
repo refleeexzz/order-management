@@ -47,6 +47,16 @@ func (a *App) Router() http.Handler {
 
 	// public endpoints (permitAll)
 	r.Get("/actuator/health", Health)
+
+	// OpenAPI spec and Swagger UI (public — spec §6: /api-docs/**,
+	// /v3/api-docs/**, /swagger-ui.html, /swagger-ui/**).
+	r.Get("/api-docs", OpenAPI)
+	r.Get("/api-docs/*", OpenAPI)
+	r.Get("/v3/api-docs", OpenAPI)
+	r.Get("/v3/api-docs/*", OpenAPI)
+	r.Get("/swagger-ui.html", SwaggerUI)
+	r.Get("/swagger-ui/*", SwaggerUI)
+
 	r.Route("/api/auth", func(r chi.Router) {
 		r.Post("/register", authHandler.Register)
 		r.Post("/login", authHandler.Login)

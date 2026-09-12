@@ -1,218 +1,219 @@
 # Order Management System
 
-A robust order management platform built with Java Spring Boot backend and React frontend.
+Sistema de gestão de pedidos (marketplace) com API REST, frontend web e aplicativo Android. Cobre catálogo de produtos e categorias, perfis de cliente, ciclo completo de pedidos (criação, pagamento, envio, entrega, cancelamento) e pagamentos simulados (PIX, boleto, cartão).
 
-[![CI Pipeline](https://github.com/your-org/order-management/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/order-management/actions/workflows/ci.yml)
-[![CD Pipeline](https://github.com/your-org/order-management/actions/workflows/cd.yml/badge.svg)](https://github.com/your-org/order-management/actions/workflows/cd.yml)
-[![Security Scan](https://github.com/your-org/order-management/actions/workflows/security.yml/badge.svg)](https://github.com/your-org/order-management/actions/workflows/security.yml)
+O backend foi reescrito de Java/Spring Boot para **Go**, mantendo paridade comportamental com a API original.
 
-## 🚀 Tech Stack
+## Stack
 
-### Backend
-- Java 21
-- Spring Boot 3.4
-- Spring Security + JWT
-- Spring Data JPA
-- PostgreSQL 16
-- Redis (caching)
-- Flyway (database migrations)
-- Swagger/OpenAPI (API docs)
+| Camada | Tecnologias |
+|---|---|
+| **Backend** | Go 1.23, chi (roteador), GORM (ORM), golang-migrate (migrations embutidas), JWT (golang-jwt), BCrypt, PostgreSQL 16 |
+| **Frontend** | React 18 + TypeScript + Tailwind CSS + Vite (em `frontend/`) |
+| **Mobile** | App Android em Kotlin + Jetpack Compose (em `android/`) |
+| **Infra** | Docker / Docker Compose, GitHub Actions (CI/CD), Railway |
 
-### Frontend
-- React 19
-- TypeScript
-- Vite
-- Tailwind CSS 4
-- TanStack Query
-- Zustand
-- React Router 7
+## Como rodar (sem Docker)
 
-### DevOps
-- Docker & Docker Compose
-- GitHub Actions CI/CD
-- Multi-stage Docker builds
-- Nginx (frontend server)
+### Pré-requisitos
 
-## 📋 Prerequisites
+- **Go 1.23+**
+- **Node.js 20+** (para o frontend)
+- **PostgreSQL 16** rodando localmente
 
-- Java 21+
-- Maven 3.9+
-- Node.js 20+
-- Docker & Docker Compose
+### 1. Banco de dados
 
-## 🐳 Quick Start with Docker
-
-Run the entire application stack with a single command:
+Crie o banco `order_management`. O backend espera, por padrão, o PostgreSQL em `localhost:5433` com usuário `postgres` e senha `postgres123` (ajuste via variáveis de ambiente se o seu setup for diferente — veja a tabela abaixo):
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-org/order-management.git
-cd order-management
-
-# Start all services
-docker compose up -d
+createdb -h localhost -p 5433 -U postgres order_management
 ```
 
-### Access the application:
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8080
-- **Swagger UI**: http://localhost:8080/swagger-ui.html
-- **PgAdmin**: http://localhost:5050 (admin@admin.com / admin123)
+As migrations rodam automaticamente no boot (estão embutidas no binário), criando todo o schema.
 
-## 🛠️ Development Setup
-
-### Backend (Spring Boot)
+### 2. Backend
 
 ```bash
-# Start database and Redis only
-docker compose up -d postgres redis
-
-# Run the backend
-./mvnw spring-boot:run
+go run ./cmd/api
 ```
 
-### Frontend (React + Vite)
+A API sobe em **http://localhost:8080**.
+
+### 3. Frontend
 
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
 ```
 
-Frontend will be available at http://localhost:5173
+O app sobe em **http://localhost:5173**.
 
-## 🏗️ Project Structure
+### Endereços
 
-```
-order-management/
-├── .github/
-│   └── workflows/
-│       ├── ci.yml           # CI Pipeline
-│       ├── cd.yml           # CD Pipeline
-│       └── security.yml     # Security scans
-├── frontend/
-│   ├── src/
-│   │   ├── components/      # Reusable components
-│   │   ├── pages/           # Page components
-│   │   ├── store/           # Zustand stores
-│   │   ├── lib/             # Utilities & API
-│   │   └── types/           # TypeScript types
-│   ├── Dockerfile           # Frontend Docker build
-│   └── nginx.conf           # Nginx configuration
-├── src/main/java/com/ordermanagement/
-│   ├── config/              # Security, Swagger, Redis
-│   ├── domain/              # JPA entities & enums
-│   ├── repository/          # Spring Data repositories
-│   ├── service/             # Business logic
-│   ├── controller/          # REST endpoints
-│   ├── dto/                 # Request/Response objects
-│   ├── exception/           # Custom exceptions
-│   └── security/            # JWT & auth filters
-├── Dockerfile               # Backend Docker build
-├── docker-compose.yml       # Development environment
-└── docker-compose.prod.yml  # Production environment
-```
+| O quê | Onde |
+|---|---|
+| App web | http://localhost:5173 |
+| API | http://localhost:8080 |
+| Swagger UI | http://localhost:8080/swagger-ui.html |
+| OpenAPI JSON | http://localhost:8080/api-docs |
+| Health check | http://localhost:8080/actuator/health |
 
-## 🔧 Docker Commands
+## Como rodar com Docker
+
+Sobe PostgreSQL (porta 5433), backend (8080), frontend (3000) e pgAdmin (5050):
 
 ```bash
-# Start all services
-docker compose up -d
+docker compose up --build
+```
 
-# Build and start (rebuild images)
-docker compose up -d --build
+Para produção (imagens pré-construídas, sem portas de banco expostas):
 
-# View logs
-docker compose logs -f
-
-# View specific service logs
-docker compose logs -f backend
-docker compose logs -f frontend
-
-# Stop all services
-docker compose down
-
-# Stop and remove volumes (clean database)
-docker compose down -v
-
-# Production deployment
+```bash
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-## 🔐 Environment Variables
+## Endpoints
 
-Copy `.env.example` to `.env` and configure:
+Legenda de acesso: **público** (sem token), **auth** (qualquer usuário autenticado), **ADMIN** (somente role ADMIN).
 
-```bash
-cp .env.example .env
+### Auth
+
+| Método | Rota | Acesso | Descrição |
+|---|---|---|---|
+| POST | `/api/auth/register` | público | Registra usuário (role opcional: ADMIN/SELLER/CUSTOMER; padrão CUSTOMER) |
+| POST | `/api/auth/login` | público | Login; retorna token JWT |
+
+### Categorias
+
+| Método | Rota | Acesso | Descrição |
+|---|---|---|---|
+| GET | `/api/categories` | público | Lista categorias ativas |
+| GET | `/api/categories/all` | ADMIN | Lista todas (incl. inativas) |
+| GET | `/api/categories/{id}` | público | Busca por id |
+| POST | `/api/categories` | ADMIN | Cria categoria |
+| PUT | `/api/categories/{id}` | ADMIN | Atualiza nome/descrição |
+| DELETE | `/api/categories/{id}` | ADMIN | Desativa (soft delete) |
+
+### Produtos
+
+| Método | Rota | Acesso | Descrição |
+|---|---|---|---|
+| GET | `/api/products` | público | Lista ativos, paginado (ordenação fixa `name ASC`) |
+| GET | `/api/products/{id}` | público | Busca por id |
+| GET | `/api/products/sku/{sku}` | público | Busca por SKU |
+| GET | `/api/products/category/{categoryId}` | público | Lista por categoria, paginado |
+| GET | `/api/products/search?query=` | público | Busca por nome (substring, case-insensitive) |
+| GET | `/api/products/low-stock?threshold=` | ADMIN | Estoque baixo (padrão threshold=10) |
+| POST | `/api/products` | ADMIN | Cria produto |
+| PUT | `/api/products/{id}` | ADMIN | Atualização parcial (sku não muda) |
+| DELETE | `/api/products/{id}` | ADMIN | Desativa (soft delete) |
+
+### Clientes
+
+| Método | Rota | Acesso | Descrição |
+|---|---|---|---|
+| POST | `/api/customers` | auth | Cria o perfil de cliente do usuário logado |
+| GET | `/api/customers/me` | auth | Perfil do usuário logado |
+| PUT | `/api/customers/me` | auth | Atualiza telefone/endereço (CPF não muda) |
+| GET | `/api/customers` | ADMIN | Lista clientes, paginado (formato Spring Page) |
+| GET | `/api/customers/{id}` | ADMIN | Busca por id |
+
+### Pedidos
+
+| Método | Rota | Acesso | Descrição |
+|---|---|---|---|
+| POST | `/api/orders` | auth | Cria pedido (usa o perfil do usuário logado) |
+| GET | `/api/orders/my-orders` | auth | Meus pedidos, paginado |
+| GET | `/api/orders/{id}` | auth* | Busca por id (*dono ou ADMIN) |
+| GET | `/api/orders/number/{orderNumber}` | auth* | Busca por número (*dono ou ADMIN) |
+| POST | `/api/orders/{id}/cancel?reason=` | auth* | Cancela e restaura estoque (*dono ou ADMIN) |
+| GET | `/api/orders` | ADMIN | Lista todos, paginado |
+| GET | `/api/orders/status/{status}` | ADMIN | Lista por status, paginado |
+| GET | `/api/orders/stats` | ADMIN | Contagem por status |
+| PATCH | `/api/orders/{id}/status` | ADMIN | Transição de status |
+
+### Pagamentos
+
+| Método | Rota | Acesso | Descrição |
+|---|---|---|---|
+| POST | `/api/payments` | auth | Processa pagamento de um pedido |
+| GET | `/api/payments/order/{orderId}` | auth | Pagamento de um pedido |
+| POST | `/api/payments/{paymentId}/refund` | ADMIN | Estorna um pagamento PAID |
+
+### Infra
+
+| Método | Rota | Acesso | Descrição |
+|---|---|---|---|
+| GET | `/actuator/health` | público | Health check (`{"status":"UP"}`) |
+| GET | `/api-docs` · `/v3/api-docs` | público | Especificação OpenAPI 3.0 (JSON) |
+| GET | `/swagger-ui.html` · `/swagger-ui/*` | público | Swagger UI |
+
+## Regras de negócio e papéis
+
+- **Papéis (roles):** `ADMIN`, `SELLER`, `CUSTOMER`. O registro é aberto — qualquer um pode se registrar com qualquer role.
+- **Quirk MANAGER (paridade com o backend Java):** as operações de escrita e leituras administrativas exigem, no nível de método, `ADMIN` ou `MANAGER` — e `MANAGER` não existe como role. Na prática, **somente ADMIN** cria/edita/remove produtos e categorias, lista clientes/pedidos e altera status; `SELLER` recebe `403`.
+- **Pedidos:** número no formato `ORD-AAAAMMDD-XXXXX`; **frete fixo de R$ 15,00** em todo pedido; cupom **`FIRST10`** dá 10% de desconto sobre o subtotal (cupom desconhecido = sem desconto, sem erro); **o estoque é baixado na criação do pedido** e **restaurado em qualquer cancelamento**.
+- **Status do pedido:** `PENDING_PAYMENT → PAID → PROCESSING → SHIPPED → DELIVERED` (ou `CANCELLED` de qualquer estado exceto `DELIVERED`).
+- **Pagamentos (simulação):** **PIX e boleto (BANK_SLIP) são sempre aprovados**; cartão de crédito/débito (e TED) exigem `cardToken` não vazio, senão o pagamento fica `FAILED`. Pagamento aprovado marca o pedido como `PAID`. Estorno exige pagamento `PAID` e **não** altera o status do pedido.
+- **Erros:** JSON no formato `{ status, error, message, path, timestamp, fieldErrors? }`; validações retornam `400` com `fieldErrors` detalhando campo a campo.
+
+## Variáveis de ambiente
+
+Veja `.env.example` para o template completo.
+
+| Variável | Padrão | Descrição |
+|---|---|---|
+| `SERVER_PORT` | `8080` | Porta HTTP da API |
+| `DB_HOST` | `localhost` | Host do PostgreSQL |
+| `DB_PORT` | `5433` | Porta do PostgreSQL |
+| `DB_NAME` | `order_management` | Nome do banco |
+| `DB_USER` | `postgres` | Usuário do banco |
+| `DB_PASSWORD` | `postgres123` | Senha do banco |
+| `DATABASE_URL` | — | DSN completo; se definido, tem precedência sobre `DB_*` |
+| `JWT_SECRET` | `minha-chave-secreta-...` | Segredo HMAC-SHA256 do JWT (mín. 32 bytes) |
+| `JWT_EXPIRATION` | `86400000` | Validade do token em ms (24h) |
+| `VITE_API_URL` | — | URL da API para o frontend (ex.: `http://localhost:8080`) |
+| `VITE_IMGBB_API_KEY` | — | Chave do imgbb (upload de imagens no frontend) |
+| `BACKEND_IMAGE` / `FRONTEND_IMAGE` | — | Imagens Docker usadas pelo compose de produção |
+
+## Estrutura do projeto
+
+```
+.
+├── api/                    # OpenAPI spec embutida (openapi.json + embed)
+├── cmd/api/                # Ponto de entrada do backend (main.go)
+├── internal/
+│   ├── apperror/           # Erros tipados → status HTTP
+│   ├── config/             # Configuração via env (+ .env opcional)
+│   ├── domain/             # Entidades e enums
+│   ├── dto/                # Requests/responses da API
+│   ├── handler/            # Handlers HTTP + rotas (chi)
+│   ├── httputil/           # JSON, validação, dinheiro
+│   ├── middleware/         # JWT auth, guards de role, CORS
+│   ├── repository/         # Acesso a dados (GORM)
+│   ├── security/           # JWT provider + BCrypt
+│   └── service/            # Regras de negócio
+├── migrations/             # SQL de migration (embutido no binário)
+├── frontend/               # React 18 + TS + Tailwind + Vite
+├── android/                # App Android (Kotlin + Jetpack Compose)
+├── .github/workflows/      # CI, CD e security scan
+├── Dockerfile              # Imagem do backend (multi-stage)
+├── docker-compose.yml      # Stack de desenvolvimento
+├── docker-compose.prod.yml # Stack de produção
+└── railway.toml            # Deploy na Railway (via Dockerfile)
 ```
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `POSTGRES_DB` | Database name | order_management |
-| `POSTGRES_USER` | Database user | postgres |
-| `POSTGRES_PASSWORD` | Database password | postgres123 |
-| `JWT_SECRET` | JWT signing key | (required) |
-| `JWT_EXPIRATION` | Token expiration (ms) | 86400000 |
+## Testes
 
-## 📡 API Endpoints
+```bash
+go test ./...
+```
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | /api/auth/register | Register new user |
-| POST | /api/auth/login | Authenticate user |
-| GET | /api/products | List products |
-| POST | /api/products | Create product |
-| GET | /api/orders | List orders |
-| POST | /api/orders | Create new order |
-| PATCH | /api/orders/{id}/status | Update order status |
-| GET | /api/categories | List categories |
-| GET | /api/customers | List customers |
+Testes unitários de domínio, DTOs, segurança (JWT/BCrypt) e serviços. `go vet ./...` e `gofmt` fazem parte do padrão do projeto.
 
-## 🔄 CI/CD Pipeline
+## CI/CD
 
-### CI Pipeline (ci.yml)
-Runs on every push and pull request:
-- ✅ Backend build & tests
-- ✅ Frontend build & lint
-- ✅ TypeScript type checking
-- ✅ Docker image build
-- ✅ Integration tests with Docker Compose
-
-### CD Pipeline (cd.yml)
-Runs on version tags (v*):
-- 📦 Build multi-platform Docker images
-- 🚀 Push to GitHub Container Registry
-- 📋 Create GitHub Release
-- 🎯 Deploy to staging/production
-
-### Security Scan (security.yml)
-Runs weekly and on pushes:
-- 🔍 OWASP Dependency Check (Backend)
-- 🔍 NPM Audit (Frontend)
-- 🔍 Trivy Docker image scan
-- 🔍 CodeQL analysis
-
-## ✅ Features
-
-- [x] User authentication (JWT)
-- [x] Role-based authorization (Admin, Seller, Customer)
-- [x] Customer management
-- [x] Product catalog with categories
-- [x] Order processing with status tracking
-- [x] Shopping cart
-- [x] Seller dashboard
-- [x] Responsive design
-- [x] Docker containerization
-- [x] CI/CD pipelines
-- [ ] Email notifications
-- [ ] Reports and analytics
-- [ ] Payment gateway integration
-
-## 📄 License
-
-MIT
+- **CI** (`.github/workflows/ci.yml`): backend em Go (`go build`, `go vet`, `go test` com PostgreSQL 16 em serviço), frontend (`npm ci`, lint, build, type-check), build das imagens Docker e teste de integração via `docker compose`.
+- **Security** (`.github/workflows/security.yml`): `govulncheck` no backend, `npm audit` no frontend, Trivy nas imagens e CodeQL (Go + JavaScript).
+- **CD** (`.github/workflows/cd.yml`): em tags `v*`, build e push das imagens para o ghcr.io e criação de release.

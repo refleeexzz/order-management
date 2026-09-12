@@ -1,0 +1,947 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Order Management API",
+    "description": "API REST do sistema de gestão de pedidos (marketplace): autenticação JWT, catálogo de produtos e categorias, clientes, pedidos e pagamentos. Backend em Go (chi + GORM) com paridade comportamental ao backend Spring Boot original.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    { "url": "http://localhost:8080", "description": "Local" }
+  ],
+  "tags": [
+    { "name": "Auth", "description": "Registro e login (endpoints públicos)" },
+    { "name": "Categories", "description": "Catálogo: categorias" },
+    { "name": "Products", "description": "Catálogo: produtos" },
+    { "name": "Customers", "description": "Perfis de cliente" },
+    { "name": "Orders", "description": "Pedidos" },
+    { "name": "Payments", "description": "Pagamentos" },
+    { "name": "Health", "description": "Health check (público)" }
+  ],
+  "paths": {
+    "/actuator/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health check",
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "description": "Aplicação saudável",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "status": { "type": "string", "example": "UP" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Registra um novo usuário",
+        "description": "Qualquer chamador pode se registrar com role ADMIN, SELLER ou CUSTOMER (role inválida/ausente vira CUSTOMER).",
+        "operationId": "register",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegisterRequest" } } }
+        },
+        "responses": {
+          "201": { "description": "Usuário registrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } } },
+          "400": { "description": "Erro de validação", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "409": { "description": "E-mail já cadastrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Autentica um usuário",
+        "operationId": "login",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Login bem-sucedido", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } } },
+          "401": { "description": "Credenciais inválidas", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/categories": {
+      "get": {
+        "tags": ["Categories"],
+        "summary": "Lista categorias ativas",
+        "operationId": "listActiveCategories",
+        "responses": {
+          "200": {
+            "description": "Categorias ativas",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/CategoryResponse" } } } }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Categories"],
+        "summary": "Cria uma categoria",
+        "description": "Efetivamente apenas ADMIN (a regra de método exige ADMIN|MANAGER e MANAGER não existe).",
+        "operationId": "createCategory",
+        "security": [{ "Bearer Authentication": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateCategoryRequest" } } }
+        },
+        "responses": {
+          "201": { "description": "Categoria criada", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CategoryResponse" } } } },
+          "400": { "description": "Erro de validação", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Sem permissão", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "409": { "description": "Nome já existe", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/categories/all": {
+      "get": {
+        "tags": ["Categories"],
+        "summary": "Lista todas as categorias (incl. inativas)",
+        "description": "Apenas ADMIN.",
+        "operationId": "listAllCategories",
+        "security": [{ "Bearer Authentication": [] }],
+        "responses": {
+          "200": {
+            "description": "Todas as categorias",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/CategoryResponse" } } } }
+          },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Sem permissão", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/categories/{id}": {
+      "get": {
+        "tags": ["Categories"],
+        "summary": "Busca categoria por id",
+        "operationId": "getCategoryById",
+        "parameters": [{ "$ref": "#/components/parameters/IdPath" }],
+        "responses": {
+          "200": { "description": "Categoria encontrada", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CategoryResponse" } } } },
+          "404": { "description": "Não encontrada", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "put": {
+        "tags": ["Categories"],
+        "summary": "Atualiza uma categoria",
+        "description": "Apenas ADMIN. Atualiza nome e descrição.",
+        "operationId": "updateCategory",
+        "security": [{ "Bearer Authentication": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdPath" }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateCategoryRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Categoria atualizada", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CategoryResponse" } } } },
+          "400": { "description": "Erro de validação", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Sem permissão", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Não encontrada", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "delete": {
+        "tags": ["Categories"],
+        "summary": "Desativa uma categoria (soft delete)",
+        "description": "Apenas ADMIN. Define active=false.",
+        "operationId": "deactivateCategory",
+        "security": [{ "Bearer Authentication": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdPath" }],
+        "responses": {
+          "204": { "description": "Categoria desativada (sem corpo)" },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Sem permissão", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Não encontrada", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/products": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Lista produtos ativos (paginado)",
+        "description": "Ordenação fixa por name ASC (parâmetro sort é ignorado).",
+        "operationId": "listActiveProducts",
+        "parameters": [
+          { "$ref": "#/components/parameters/PageParam" },
+          { "$ref": "#/components/parameters/SizeParam" }
+        ],
+        "responses": {
+          "200": { "description": "Página de produtos", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProductPage" } } } }
+        }
+      },
+      "post": {
+        "tags": ["Products"],
+        "summary": "Cria um produto",
+        "description": "Efetivamente apenas ADMIN (mesma quirk MANAGER das categorias).",
+        "operationId": "createProduct",
+        "security": [{ "Bearer Authentication": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateProductRequest" } } }
+        },
+        "responses": {
+          "201": { "description": "Produto criado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProductResponse" } } } },
+          "400": { "description": "Erro de validação", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Sem permissão", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Categoria não encontrada", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "409": { "description": "SKU já existe", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/products/{id}": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Busca produto por id",
+        "operationId": "getProductById",
+        "parameters": [{ "$ref": "#/components/parameters/IdPath" }],
+        "responses": {
+          "200": { "description": "Produto encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProductResponse" } } } },
+          "404": { "description": "Não encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "put": {
+        "tags": ["Products"],
+        "summary": "Atualiza um produto (parcial)",
+        "description": "Apenas ADMIN. Aplica somente os campos não nulos; sku não pode ser alterado.",
+        "operationId": "updateProduct",
+        "security": [{ "Bearer Authentication": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdPath" }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateProductRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Produto atualizado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProductResponse" } } } },
+          "400": { "description": "Erro de validação", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Sem permissão", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Não encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "delete": {
+        "tags": ["Products"],
+        "summary": "Desativa um produto (soft delete)",
+        "description": "Apenas ADMIN. Define active=false.",
+        "operationId": "deactivateProduct",
+        "security": [{ "Bearer Authentication": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdPath" }],
+        "responses": {
+          "204": { "description": "Produto desativado (sem corpo)" },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Sem permissão", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Não encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/products/sku/{sku}": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Busca produto por SKU",
+        "operationId": "getProductBySku",
+        "parameters": [
+          { "name": "sku", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Produto encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProductResponse" } } } },
+          "404": { "description": "Não encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/products/category/{categoryId}": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Lista produtos ativos de uma categoria (paginado)",
+        "operationId": "listProductsByCategory",
+        "parameters": [
+          { "name": "categoryId", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } },
+          { "$ref": "#/components/parameters/PageParam" },
+          { "$ref": "#/components/parameters/SizeParam" },
+          { "$ref": "#/components/parameters/SortParam" }
+        ],
+        "responses": {
+          "200": { "description": "Página de produtos", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProductPage" } } } }
+        }
+      }
+    },
+    "/api/products/search": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Busca produtos por nome (paginado)",
+        "description": "Busca case-insensitive por substring no nome; apenas produtos ativos.",
+        "operationId": "searchProducts",
+        "parameters": [
+          { "name": "query", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "$ref": "#/components/parameters/PageParam" },
+          { "$ref": "#/components/parameters/SizeParam" },
+          { "$ref": "#/components/parameters/SortParam" }
+        ],
+        "responses": {
+          "200": { "description": "Página de produtos", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProductPage" } } } },
+          "400": { "description": "Parâmetro query ausente", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/products/low-stock": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Produtos com estoque baixo",
+        "description": "Apenas ADMIN. Retorna produtos ativos com stockQuantity <= threshold.",
+        "operationId": "listLowStockProducts",
+        "security": [{ "Bearer Authentication": [] }],
+        "parameters": [
+          { "name": "threshold", "in": "query", "required": false, "schema": { "type": "integer", "default": 10 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de produtos com estoque baixo",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ProductResponse" } } } }
+          },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Sem permissão", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/customers": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Lista clientes (paginado)",
+        "description": "Apenas ADMIN. Ordenação padrão: id DESC. Resposta no formato de página do Spring (content, totalElements, totalPages, size, number, first, last, empty, ...).",
+        "operationId": "listCustomers",
+        "security": [{ "Bearer Authentication": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/PageParam" },
+          { "$ref": "#/components/parameters/SizeParam" },
+          { "$ref": "#/components/parameters/SortParam" }
+        ],
+        "responses": {
+          "200": { "description": "Página de clientes", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CustomerPage" } } } },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Sem permissão", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "post": {
+        "tags": ["Customers"],
+        "summary": "Cria o perfil de cliente do usuário autenticado",
+        "operationId": "createCustomer",
+        "security": [{ "Bearer Authentication": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateCustomerRequest" } } }
+        },
+        "responses": {
+          "201": { "description": "Perfil criado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CustomerResponse" } } } },
+          "400": { "description": "Erro de validação", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "409": { "description": "Perfil ou CPF já existente", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/customers/me": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Perfil de cliente do usuário autenticado",
+        "operationId": "getCurrentCustomer",
+        "security": [{ "Bearer Authentication": [] }],
+        "responses": {
+          "200": { "description": "Perfil encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CustomerResponse" } } } },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Perfil não encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "put": {
+        "tags": ["Customers"],
+        "summary": "Atualiza telefone e endereço do perfil",
+        "description": "CPF não é atualizável; endereço só é substituído se enviado.",
+        "operationId": "updateCurrentCustomer",
+        "security": [{ "Bearer Authentication": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateCustomerRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Perfil atualizado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CustomerResponse" } } } },
+          "400": { "description": "Erro de validação", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Perfil não encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/customers/{id}": {
+      "get": {
+        "tags": ["Customers"],
+        "summary": "Busca cliente por id",
+        "description": "Apenas ADMIN.",
+        "operationId": "getCustomerById",
+        "security": [{ "Bearer Authentication": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdPath" }],
+        "responses": {
+          "200": { "description": "Cliente encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CustomerResponse" } } } },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Sem permissão", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Não encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/orders": {
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Cria um pedido",
+        "description": "Usa o perfil de cliente do usuário autenticado. Estoque é baixado na criação; frete fixo de R$ 15,00; cupom FIRST10 dá 10% de desconto sobre o subtotal.",
+        "operationId": "createOrder",
+        "security": [{ "Bearer Authentication": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateOrderRequest" } } }
+        },
+        "responses": {
+          "201": { "description": "Pedido criado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderResponse" } } } },
+          "400": { "description": "Validação ou estoque insuficiente", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Perfil de cliente ou produto não encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Lista todos os pedidos (paginado)",
+        "description": "Apenas ADMIN. Ordenação: createdAt DESC.",
+        "operationId": "listOrders",
+        "security": [{ "Bearer Authentication": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/PageParam" },
+          { "$ref": "#/components/parameters/SizeParam" }
+        ],
+        "responses": {
+          "200": { "description": "Página de pedidos", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderPage" } } } },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Sem permissão", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/orders/my-orders": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Pedidos do usuário autenticado (paginado)",
+        "description": "Tamanho de página padrão 10; ordenação createdAt DESC.",
+        "operationId": "listMyOrders",
+        "security": [{ "Bearer Authentication": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/PageParam" },
+          { "name": "size", "in": "query", "required": false, "schema": { "type": "integer", "default": 10 } }
+        ],
+        "responses": {
+          "200": { "description": "Página de pedidos", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderPage" } } } },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Perfil de cliente não encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/orders/stats": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Contagem de pedidos por status",
+        "description": "Apenas ADMIN.",
+        "operationId": "getOrderStats",
+        "security": [{ "Bearer Authentication": [] }],
+        "responses": {
+          "200": { "description": "Estatísticas", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderStats" } } } },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Sem permissão", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/orders/status/{status}": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Lista pedidos por status (paginado)",
+        "description": "Apenas ADMIN.",
+        "operationId": "listOrdersByStatus",
+        "security": [{ "Bearer Authentication": [] }],
+        "parameters": [
+          { "name": "status", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/OrderStatus" } },
+          { "$ref": "#/components/parameters/PageParam" },
+          { "$ref": "#/components/parameters/SizeParam" }
+        ],
+        "responses": {
+          "200": { "description": "Página de pedidos", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderPage" } } } },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Sem permissão", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/orders/number/{orderNumber}": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Busca pedido por número",
+        "description": "Dono do pedido ou ADMIN.",
+        "operationId": "getOrderByNumber",
+        "security": [{ "Bearer Authentication": [] }],
+        "parameters": [
+          { "name": "orderNumber", "in": "path", "required": true, "schema": { "type": "string", "example": "ORD-20260912-A1B2C" } }
+        ],
+        "responses": {
+          "200": { "description": "Pedido encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderResponse" } } } },
+          "400": { "description": "Sem permissão para este pedido", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Não encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/orders/{id}": {
+      "get": {
+        "tags": ["Orders"],
+        "summary": "Busca pedido por id",
+        "description": "Dono do pedido ou ADMIN.",
+        "operationId": "getOrderById",
+        "security": [{ "Bearer Authentication": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdPath" }],
+        "responses": {
+          "200": { "description": "Pedido encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderResponse" } } } },
+          "400": { "description": "Sem permissão para este pedido", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Não encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/orders/{id}/status": {
+      "patch": {
+        "tags": ["Orders"],
+        "summary": "Atualiza o status de um pedido",
+        "description": "Apenas ADMIN. Transições: PAID (exige PENDING_PAYMENT), PROCESSING (exige PAID), SHIPPED (exige PAID ou PROCESSING), DELIVERED (exige SHIPPED), CANCELLED (qualquer status exceto DELIVERED; restaura estoque). Violação de transição retorna erro.",
+        "operationId": "updateOrderStatus",
+        "security": [{ "Bearer Authentication": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/IdPath" }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateOrderStatusRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "Pedido atualizado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderResponse" } } } },
+          "400": { "description": "Transição inválida", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Sem permissão", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Não encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "500": { "description": "Transição violada no domínio (ex.: enviar pedido não pago)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/orders/{id}/cancel": {
+      "post": {
+        "tags": ["Orders"],
+        "summary": "Cancela um pedido",
+        "description": "Dono do pedido ou ADMIN. Restaura o estoque dos itens e anexa o motivo às notas. Pedido DELIVERED não pode ser cancelado.",
+        "operationId": "cancelOrder",
+        "security": [{ "Bearer Authentication": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/IdPath" },
+          { "name": "reason", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Pedido cancelado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OrderResponse" } } } },
+          "400": { "description": "Sem permissão para este pedido", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Não encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "500": { "description": "Pedido já entregue", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/payments": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Processa o pagamento de um pedido",
+        "description": "Qualquer usuário autenticado (sem checagem de propriedade). O pedido deve estar PENDING_PAYMENT e ainda não ter pagamento. PIX e BANK_SLIP são sempre aprovados; cartões exigem cardToken não vazio (simulação). Pagamento aprovado marca o pedido como PAID.",
+        "operationId": "processPayment",
+        "security": [{ "Bearer Authentication": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ProcessPaymentRequest" } } }
+        },
+        "responses": {
+          "201": { "description": "Pagamento processado (PAID ou FAILED)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PaymentResponse" } } } },
+          "400": { "description": "Pedido não aguarda pagamento ou pagamento já existe", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Pedido não encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/payments/order/{orderId}": {
+      "get": {
+        "tags": ["Payments"],
+        "summary": "Busca o pagamento de um pedido",
+        "operationId": "getPaymentByOrder",
+        "security": [{ "Bearer Authentication": [] }],
+        "parameters": [
+          { "name": "orderId", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }
+        ],
+        "responses": {
+          "200": { "description": "Pagamento encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PaymentResponse" } } } },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Pagamento não encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/api/payments/{paymentId}/refund": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Estorna um pagamento",
+        "description": "Apenas ADMIN. Exige status PAID; o status do pedido NÃO é alterado.",
+        "operationId": "refundPayment",
+        "security": [{ "Bearer Authentication": [] }],
+        "parameters": [
+          { "name": "paymentId", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }
+        ],
+        "responses": {
+          "200": { "description": "Pagamento estornado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PaymentResponse" } } } },
+          "401": { "description": "Não autenticado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "403": { "description": "Sem permissão", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Pagamento não encontrado", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "500": { "description": "Pagamento não está PAID", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "Bearer Authentication": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token JWT obtido em /api/auth/register ou /api/auth/login. Enviar como `Authorization: Bearer <token>`."
+      }
+    },
+    "parameters": {
+      "IdPath": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "integer", "format": "int64" }
+      },
+      "PageParam": {
+        "name": "page",
+        "in": "query",
+        "required": false,
+        "schema": { "type": "integer", "default": 0, "minimum": 0 }
+      },
+      "SizeParam": {
+        "name": "size",
+        "in": "query",
+        "required": false,
+        "schema": { "type": "integer", "default": 20, "minimum": 1 }
+      },
+      "SortParam": {
+        "name": "sort",
+        "in": "query",
+        "required": false,
+        "schema": { "type": "string", "example": "name,asc" }
+      }
+    },
+    "schemas": {
+      "UserRole": {
+        "type": "string",
+        "enum": ["ADMIN", "SELLER", "CUSTOMER"]
+      },
+      "OrderStatus": {
+        "type": "string",
+        "enum": ["PENDING_PAYMENT", "PAID", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"]
+      },
+      "PaymentMethod": {
+        "type": "string",
+        "enum": ["CREDIT_CARD", "DEBIT_CARD", "PIX", "BANK_SLIP", "BANK_TRANSFER"]
+      },
+      "PaymentStatus": {
+        "type": "string",
+        "enum": ["PENDING", "PAID", "FAILED", "REFUNDED", "CANCELLED"]
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": ["name", "email", "password"],
+        "properties": {
+          "name": { "type": "string", "minLength": 2, "maxLength": 100, "example": "Maria Silva" },
+          "email": { "type": "string", "format": "email", "example": "maria@example.com" },
+          "password": { "type": "string", "minLength": 6, "maxLength": 50, "format": "password", "example": "secret123" },
+          "role": { "allOf": [{ "$ref": "#/components/schemas/UserRole" }], "description": "Opcional; valor inválido ou ausente vira CUSTOMER." }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email", "example": "maria@example.com" },
+          "password": { "type": "string", "format": "password", "example": "secret123" }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "token": { "type": "string" },
+          "type": { "type": "string", "example": "Bearer" },
+          "userId": { "type": "integer", "format": "int64" },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "role": { "$ref": "#/components/schemas/UserRole" }
+        }
+      },
+      "CreateCategoryRequest": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string", "maxLength": 100, "example": "Eletrônicos" },
+          "description": { "type": "string", "maxLength": 500, "nullable": true }
+        }
+      },
+      "CategoryResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "name": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "active": { "type": "boolean" },
+          "productCount": { "type": "integer" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CreateProductRequest": {
+        "type": "object",
+        "required": ["name", "price", "stockQuantity", "categoryId"],
+        "properties": {
+          "name": { "type": "string", "maxLength": 150, "example": "Notebook Gamer" },
+          "description": { "type": "string", "maxLength": 1000, "nullable": true },
+          "price": { "type": "number", "minimum": 0.01, "example": 4999.90 },
+          "stockQuantity": { "type": "integer", "minimum": 0, "example": 10 },
+          "sku": { "type": "string", "maxLength": 50, "nullable": true, "example": "NB-GMR-001" },
+          "imageUrl": { "type": "string", "maxLength": 500, "nullable": true },
+          "categoryId": { "type": "integer", "format": "int64", "example": 1 }
+        }
+      },
+      "UpdateProductRequest": {
+        "type": "object",
+        "description": "Atualização parcial: apenas campos não nulos são aplicados (sku não é atualizável).",
+        "properties": {
+          "name": { "type": "string", "maxLength": 150, "nullable": true },
+          "description": { "type": "string", "maxLength": 1000, "nullable": true },
+          "price": { "type": "number", "minimum": 0.01, "nullable": true },
+          "stockQuantity": { "type": "integer", "minimum": 0, "nullable": true },
+          "imageUrl": { "type": "string", "maxLength": 500, "nullable": true },
+          "categoryId": { "type": "integer", "format": "int64", "nullable": true },
+          "active": { "type": "boolean", "nullable": true }
+        }
+      },
+      "ProductResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "name": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "price": { "type": "number" },
+          "stockQuantity": { "type": "integer" },
+          "sku": { "type": "string", "nullable": true },
+          "imageUrl": { "type": "string", "nullable": true },
+          "active": { "type": "boolean" },
+          "categoryId": { "type": "integer", "format": "int64" },
+          "categoryName": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time", "nullable": true }
+        }
+      },
+      "AddressDto": {
+        "type": "object",
+        "properties": {
+          "street": { "type": "string", "maxLength": 200, "nullable": true },
+          "number": { "type": "string", "maxLength": 10, "nullable": true },
+          "complement": { "type": "string", "maxLength": 100, "nullable": true },
+          "neighborhood": { "type": "string", "maxLength": 100, "nullable": true },
+          "city": { "type": "string", "maxLength": 100, "nullable": true },
+          "state": { "type": "string", "maxLength": 2, "nullable": true, "example": "SP" },
+          "zipCode": { "type": "string", "maxLength": 9, "nullable": true, "example": "01310-100" }
+        }
+      },
+      "CreateCustomerRequest": {
+        "type": "object",
+        "required": ["cpf"],
+        "properties": {
+          "cpf": { "type": "string", "pattern": "^\\d{3}\\.?\\d{3}\\.?\\d{3}-?\\d{2}$", "example": "123.456.789-01" },
+          "phone": { "type": "string", "maxLength": 15, "nullable": true, "example": "11987654321" },
+          "address": { "allOf": [{ "$ref": "#/components/schemas/AddressDto" }], "nullable": true }
+        }
+      },
+      "CustomerResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "userId": { "type": "integer", "format": "int64" },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "cpf": { "type": "string" },
+          "phone": { "type": "string", "nullable": true },
+          "address": { "allOf": [{ "$ref": "#/components/schemas/AddressDto" }], "nullable": true },
+          "totalOrders": { "type": "integer" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "OrderItemRequest": {
+        "type": "object",
+        "required": ["productId", "quantity"],
+        "properties": {
+          "productId": { "type": "integer", "format": "int64", "example": 1 },
+          "quantity": { "type": "integer", "minimum": 1, "example": 2 }
+        }
+      },
+      "CreateOrderRequest": {
+        "type": "object",
+        "required": ["items"],
+        "properties": {
+          "items": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/OrderItemRequest" } },
+          "shippingAddress": { "allOf": [{ "$ref": "#/components/schemas/AddressDto" }], "nullable": true, "description": "Se ausente, usa o endereço do perfil do cliente." },
+          "notes": { "type": "string", "nullable": true },
+          "couponCode": { "type": "string", "nullable": true, "example": "FIRST10" }
+        }
+      },
+      "OrderItemResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "productId": { "type": "integer", "format": "int64" },
+          "productName": { "type": "string" },
+          "productSku": { "type": "string", "nullable": true },
+          "quantity": { "type": "integer" },
+          "unitPrice": { "type": "number" },
+          "total": { "type": "number" }
+        }
+      },
+      "OrderResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "orderNumber": { "type": "string", "example": "ORD-20260912-A1B2C" },
+          "customerId": { "type": "integer", "format": "int64" },
+          "customerName": { "type": "string" },
+          "status": { "$ref": "#/components/schemas/OrderStatus" },
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/OrderItemResponse" } },
+          "subtotal": { "type": "number" },
+          "discount": { "type": "number" },
+          "shippingCost": { "type": "number", "example": 15.00 },
+          "total": { "type": "number" },
+          "shippingAddress": { "allOf": [{ "$ref": "#/components/schemas/AddressDto" }], "nullable": true },
+          "notes": { "type": "string", "nullable": true },
+          "paidAt": { "type": "string", "format": "date-time", "nullable": true },
+          "shippedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "deliveredAt": { "type": "string", "format": "date-time", "nullable": true },
+          "cancelledAt": { "type": "string", "format": "date-time", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "UpdateOrderStatusRequest": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": { "$ref": "#/components/schemas/OrderStatus" },
+          "reason": { "type": "string", "nullable": true, "description": "Campo ignorado pelo serviço (paridade com o backend Java)." }
+        }
+      },
+      "OrderStats": {
+        "type": "object",
+        "properties": {
+          "pendingPayment": { "type": "integer", "format": "int64" },
+          "paid": { "type": "integer", "format": "int64" },
+          "processing": { "type": "integer", "format": "int64" },
+          "shipped": { "type": "integer", "format": "int64" },
+          "delivered": { "type": "integer", "format": "int64" },
+          "cancelled": { "type": "integer", "format": "int64" }
+        }
+      },
+      "ProcessPaymentRequest": {
+        "type": "object",
+        "required": ["orderId", "method"],
+        "properties": {
+          "orderId": { "type": "integer", "format": "int64", "example": 1 },
+          "method": { "$ref": "#/components/schemas/PaymentMethod" },
+          "installments": { "type": "integer", "minimum": 1, "default": 1 },
+          "cardToken": { "type": "string", "nullable": true, "description": "Obrigatório para CREDIT_CARD/DEBIT_CARD/BANK_TRANSFER na simulação; PIX e BANK_SLIP são sempre aprovados." }
+        }
+      },
+      "PaymentResponse": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "orderId": { "type": "integer", "format": "int64" },
+          "orderNumber": { "type": "string" },
+          "method": { "$ref": "#/components/schemas/PaymentMethod" },
+          "status": { "$ref": "#/components/schemas/PaymentStatus" },
+          "amount": { "type": "number" },
+          "transactionId": { "type": "string", "nullable": true, "example": "PIX-1A2B3C4D5E6F" },
+          "installments": { "type": "integer" },
+          "paidAt": { "type": "string", "format": "date-time", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ProductPage": {
+        "type": "object",
+        "description": "PageResponse customizado.",
+        "properties": {
+          "content": { "type": "array", "items": { "$ref": "#/components/schemas/ProductResponse" } },
+          "page": { "type": "integer" },
+          "size": { "type": "integer" },
+          "totalElements": { "type": "integer", "format": "int64" },
+          "totalPages": { "type": "integer" },
+          "first": { "type": "boolean" },
+          "last": { "type": "boolean" }
+        }
+      },
+      "OrderPage": {
+        "type": "object",
+        "description": "PageResponse customizado.",
+        "properties": {
+          "content": { "type": "array", "items": { "$ref": "#/components/schemas/OrderResponse" } },
+          "page": { "type": "integer" },
+          "size": { "type": "integer" },
+          "totalElements": { "type": "integer", "format": "int64" },
+          "totalPages": { "type": "integer" },
+          "first": { "type": "boolean" },
+          "last": { "type": "boolean" }
+        }
+      },
+      "CustomerPage": {
+        "type": "object",
+        "description": "Página no formato do Spring Data (usado apenas pela listagem de clientes).",
+        "properties": {
+          "content": { "type": "array", "items": { "$ref": "#/components/schemas/CustomerResponse" } },
+          "totalElements": { "type": "integer", "format": "int64" },
+          "totalPages": { "type": "integer" },
+          "size": { "type": "integer" },
+          "number": { "type": "integer" },
+          "numberOfElements": { "type": "integer" },
+          "first": { "type": "boolean" },
+          "last": { "type": "boolean" },
+          "empty": { "type": "boolean" }
+        }
+      },
+      "FieldError": {
+        "type": "object",
+        "properties": {
+          "field": { "type": "string" },
+          "message": { "type": "string" },
+          "rejectedValue": { "nullable": true }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "integer", "example": 400 },
+          "error": { "type": "string", "example": "Bad Request" },
+          "message": { "type": "string" },
+          "path": { "type": "string", "example": "/api/orders" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "fieldErrors": { "type": "array", "items": { "$ref": "#/components/schemas/FieldError" }, "nullable": true, "description": "Presente apenas em erros de validação." }
+        }
+      }
+    }
+  }
+}
