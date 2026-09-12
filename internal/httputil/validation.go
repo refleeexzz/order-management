@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/shopspring/decimal"
 )
 
 // validate is the shared validator. Field names come from the `json` tag
@@ -24,6 +25,28 @@ var validate = func() *validator.Validate {
 	})
 	_ = v.RegisterValidation("notblank", func(fl validator.FieldLevel) bool {
 		return strings.TrimSpace(fl.Field().String()) != ""
+	})
+	// decmin reproduces Jakarta @DecimalMin (inclusive): the field must be a
+	// decimal.Decimal (or *decimal.Decimal) with value >= the tag parameter.
+	// A nil pointer passes (pair it with `required` to reject nil, like
+	// @NotNull + @DecimalMin).
+	_ = v.RegisterValidation("decmin", func(fl validator.FieldLevel) bool {
+		min, err := decimal.NewFromString(fl.Param())
+		if err != nil {
+			return false
+		}
+		field := fl.Field()
+		if field.Kind() == reflect.Ptr {
+			if field.IsNil() {
+				return true
+			}
+			field = field.Elem()
+		}
+		d, ok := field.Interface().(decimal.Decimal)
+		if !ok {
+			return false
+		}
+		return d.GreaterThanOrEqual(min)
 	})
 	return v
 }()
@@ -47,7 +70,7 @@ func Validate(s interface{}, messages map[string]string) []FieldError {
 		out = append(out, FieldError{
 			Field:         fe.Field(),
 			Message:       msg,
-			RejectedValue: fe.Value(),
+			RejectedValue: normalizeRejectedValue(fe.Value()),
 		})
 	}
 	return out
