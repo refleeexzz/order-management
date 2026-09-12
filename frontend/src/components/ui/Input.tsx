@@ -61,7 +61,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
 });
 
 export interface FieldProps {
-  label: string;
+  label: ReactNode;
   htmlFor: string;
   required?: boolean;
   error?: string;
