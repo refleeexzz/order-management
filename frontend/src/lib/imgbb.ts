@@ -1,49 +1,37 @@
-// ImgBB API service for image uploads
-// Get your API key at: https://api.imgbb.com/
-
-const IMGBB_API_KEY = import.meta.env.VITE_IMGBB_API_KEY || '';
-
-export interface ImgBBUploadResponse {
-  success: boolean;
-  data: {
-    id: string;
-    url: string;
-    display_url: string;
-    delete_url: string;
-  };
-  status: number;
-}
-
-export async function uploadToImgBB(file: File): Promise<string> {
-  if (!IMGBB_API_KEY) {
-    throw new Error('IMGBB_API_KEY não configurado. Adicione VITE_IMGBB_API_KEY no .env');
+/**
+ * Upload de imagem para o imgbb (o backend só armazena a URL resultante).
+ * Se VITE_IMGBB_API_KEY não estiver configurada, o formulário de produto
+ * permite colar a URL diretamente (ver ProductFormModal).
+ */
+export async function uploadImage(file: File): Promise<string> {
+  const apiKey = import.meta.env.VITE_IMGBB_API_KEY;
+  if (!apiKey) {
+    throw new Error(
+      "Upload de imagem não configurado. Defina VITE_IMGBB_API_KEY ou cole a URL da imagem.",
+    );
   }
 
-  const formData = new FormData();
-  formData.append('image', file);
+  const form = new FormData();
+  form.append("image", file);
 
-  const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-    method: 'POST',
-    body: formData,
+  const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+    method: "POST",
+    body: form,
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error?.message || 'Erro ao fazer upload da imagem');
+    throw new Error("Falha ao enviar a imagem. Tente novamente.");
   }
 
-  const result: ImgBBUploadResponse = await response.json();
-  
-  if (!result.success) {
-    throw new Error('Falha no upload da imagem');
+  const data = (await response.json()) as {
+    success: boolean;
+    data?: { url?: string; display_url?: string };
+  };
+  const url = data.data?.display_url ?? data.data?.url;
+  if (!data.success || !url) {
+    throw new Error("O serviço de imagens não retornou uma URL válida.");
   }
-
-  return result.data.display_url;
+  return url;
 }
 
-export function isValidImageFile(file: File): boolean {
-  const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-  const maxSize = 32 * 1024 * 1024; // 32MB (ImgBB limit)
-  
-  return validTypes.includes(file.type) && file.size <= maxSize;
-}
+export const isImageUploadConfigured = Boolean(import.meta.env.VITE_IMGBB_API_KEY);

@@ -1,204 +1,154 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useAuthStore } from '../../store';
-import { Button, Input, Card, CardContent } from '../../components/ui';
-import { Sparkles, Mail, Lock, User, ArrowRight, Check } from 'lucide-react';
+import { useState, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Store } from "lucide-react";
+import { authApi } from "@/lib/endpoints";
+import { ApiError } from "@/lib/api";
+import { useAuthStore } from "@/stores/auth";
+import { Button } from "@/components/ui/Button";
+import { Field, Input } from "@/components/ui/Input";
+import { cn } from "@/lib/utils";
 
-const registerSchema = z.object({
-  name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
-  email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Senhas não conferem',
-  path: ['confirmPassword'],
-});
-
-type RegisterForm = z.infer<typeof registerSchema>;
+type AccountKind = "CUSTOMER" | "SELLER";
 
 export function RegisterPage() {
   const navigate = useNavigate();
-  const { register: registerUser, isLoading, error, clearError } = useAuthStore();
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const setSession = useAuthStore((s) => s.setSession);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [kind, setKind] = useState<AccountKind>("CUSTOMER");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<RegisterForm>({
-    resolver: zodResolver(registerSchema),
-  });
-
-  const onSubmit = async (data: RegisterForm) => {
-    setSubmitError(null);
-    clearError();
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setLoading(true);
     try {
-      await registerUser({
-        name: data.name,
-        email: data.email,
-        password: data.password,
+      const auth = await authApi.register({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+        role: kind,
       });
-      setSuccess(true);
-      setTimeout(() => navigate('/login'), 2000);
-    } catch {
-      setSubmitError('Erro ao criar conta. Tente novamente.');
+      setSession(auth);
+      // Após o registro, oferecemos a criação do perfil de cliente
+      // (necessário para comprar — SPEC §5: checkout exige customer profile).
+      navigate("/conta/perfil?boas-vindas=1", { replace: true });
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Não foi possível criar a conta. Tente novamente.",
+      );
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const benefits = [
-    'Acesso a ofertas exclusivas',
-    'Acompanhe seus pedidos',
-    'Lista de desejos personalizada',
-    'Histórico de compras',
-  ];
+  }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Branding */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-brand-600 via-brand-700 to-purple-800 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-accent-500 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-brand-400 rounded-full blur-3xl" />
-        </div>
-        
-        <div className="relative z-10 flex flex-col justify-center p-12">
-          <Link to="/" className="flex items-center gap-3 mb-12">
-            <div className="w-12 h-12 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center">
-              <Sparkles className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold font-display text-white">
-              Nova<span className="text-accent-400">Shop</span>
-            </span>
-          </Link>
-
-          <h2 className="text-4xl font-bold text-white mb-4 font-display">
-            Junte-se a milhares de compradores
-          </h2>
-          <p className="text-lg text-brand-100 mb-8 max-w-md">
-            Crie sua conta gratuitamente e tenha acesso a benefícios exclusivos.
+    <main className="flex min-h-[70vh] items-center justify-center px-4 py-12">
+      <div className="w-full max-w-sm">
+        <div className="flex flex-col items-center text-center">
+          <span className="flex h-10 w-10 items-center justify-center rounded-md bg-brand text-white">
+            <Store className="h-6 w-6" aria-hidden />
+          </span>
+          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-zinc-900">
+            Criar sua conta
+          </h1>
+          <p className="mt-1 text-sm text-zinc-600">
+            Compre com PIX, cartão ou boleto em poucos minutos.
           </p>
-          
-          <ul className="space-y-4">
-            {benefits.map((benefit, i) => (
-              <li key={i} className="flex items-center gap-3 text-white">
-                <div className="w-6 h-6 bg-accent-500 rounded-full flex items-center justify-center">
-                  <Check className="h-4 w-4" />
-                </div>
-                {benefit}
-              </li>
+        </div>
+
+        <form onSubmit={onSubmit} className="mt-8 flex flex-col gap-4">
+          {error && (
+            <div role="alert" className="rounded-md border border-red-200 bg-error-subtle px-3 py-2 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
+          <div role="group" aria-label="Tipo de conta" className="grid grid-cols-2 gap-1 rounded-md bg-zinc-100 p-1">
+            {(
+              [
+                { value: "CUSTOMER", label: "Quero comprar" },
+                { value: "SELLER", label: "Quero vender" },
+              ] as const
+            ).map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={kind === option.value}
+                onClick={() => setKind(option.value)}
+                className={cn(
+                  "h-8 rounded-sm text-sm font-medium transition-colors",
+                  kind === option.value
+                    ? "bg-white text-zinc-900 shadow-sm"
+                    : "text-zinc-600 hover:text-zinc-900",
+                )}
+              >
+                {option.label}
+              </button>
             ))}
-          </ul>
-        </div>
-      </div>
-
-      {/* Right Side - Form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-surface-50">
-        <div className="w-full max-w-md">
-          {/* Mobile Logo */}
-          <Link to="/" className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center shadow-lg">
-              <Sparkles className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold font-display text-surface-900">
-              Nova<span className="text-brand-600">Shop</span>
-            </span>
-          </Link>
-
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-surface-900 mb-2 font-display">
-              Criar sua conta
-            </h1>
-            <p className="text-surface-500">
-              Preencha os dados abaixo para começar
-            </p>
           </div>
+          {kind === "SELLER" && (
+            <p className="text-xs text-zinc-500">
+              Contas de vendedor são criadas imediatamente. O painel de vendas está em
+              liberação gradual — por enquanto você pode comprar normalmente.
+            </p>
+          )}
 
-          <Card className="border-0 shadow-soft">
-            <CardContent className="p-6 sm:p-8">
-              {success ? (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Check className="h-8 w-8 text-emerald-600" />
-                  </div>
-                  <h3 className="text-xl font-bold text-surface-900 mb-2">Conta criada!</h3>
-                  <p className="text-surface-500">Redirecionando para login...</p>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
-                  {(submitError || error) && (
-                    <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-                      {submitError || error}
-                    </div>
-                  )}
+          <Field label="Nome completo" htmlFor="reg-name" required>
+            <Input
+              id="reg-name"
+              autoComplete="name"
+              required
+              minLength={2}
+              maxLength={100}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Maria da Silva"
+            />
+          </Field>
+          <Field label="E-mail" htmlFor="reg-email" required>
+            <Input
+              id="reg-email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="voce@exemplo.com"
+            />
+          </Field>
+          <Field
+            label="Senha"
+            htmlFor="reg-password"
+            required
+            hint="Mínimo de 6 caracteres."
+          >
+            <Input
+              id="reg-password"
+              type="password"
+              autoComplete="new-password"
+              required
+              minLength={6}
+              maxLength={50}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Crie uma senha"
+            />
+          </Field>
+          <Button type="submit" size="lg" loading={loading} className="mt-2 w-full">
+            Criar conta
+          </Button>
+        </form>
 
-                  <Input
-                    id="name"
-                    type="text"
-                    label="Nome completo"
-                    placeholder="Seu nome"
-                    icon={<User className="h-5 w-5" />}
-                    error={errors.name?.message}
-                    {...register('name')}
-                  />
-
-                  <Input
-                    id="email"
-                    type="email"
-                    label="Email"
-                    placeholder="seu@email.com"
-                    icon={<Mail className="h-5 w-5" />}
-                    error={errors.email?.message}
-                    {...register('email')}
-                  />
-
-                  <Input
-                    id="password"
-                    type="password"
-                    label="Senha"
-                    placeholder="Mínimo 6 caracteres"
-                    icon={<Lock className="h-5 w-5" />}
-                    error={errors.password?.message}
-                    {...register('password')}
-                  />
-
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    label="Confirmar senha"
-                    placeholder="Digite a senha novamente"
-                    icon={<Lock className="h-5 w-5" />}
-                    error={errors.confirmPassword?.message}
-                    {...register('confirmPassword')}
-                  />
-
-                  <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>
-                    Criar Conta
-                    <ArrowRight className="h-5 w-5 ml-2" />
-                  </Button>
-
-                  <p className="text-center text-sm text-surface-500 mt-4">
-                    Ao criar sua conta, você concorda com nossos{' '}
-                    <span className="text-surface-600 font-medium">Termos de Uso</span>
-                    {' '}e{' '}
-                    <span className="text-surface-600 font-medium">Política de Privacidade</span>
-                  </p>
-                </form>
-              )}
-            </CardContent>
-          </Card>
-
-          <p className="text-center text-surface-600 mt-6">
-            Já tem uma conta?{' '}
-            <Link to="/login" className="text-brand-600 hover:text-brand-700 font-semibold">
-              Fazer login
-            </Link>
-          </p>
-        </div>
+        <p className="mt-6 text-center text-sm text-zinc-600">
+          Já tem conta?{" "}
+          <Link to="/login" className="font-medium text-brand hover:text-brand-hover">
+            Entrar
+          </Link>
+        </p>
       </div>
-    </div>
+    </main>
   );
 }

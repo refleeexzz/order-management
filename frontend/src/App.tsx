@@ -1,132 +1,99 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'sonner';
-import { MainLayout } from './components/layout';
-import { MarketplaceLayout } from './components/marketplace';
-import { ErrorBoundary } from './components/ErrorBoundary';
-import { LoginPage, RegisterPage } from './pages/auth';
-import { DashboardPage } from './pages/dashboard';
-import { ProductsPage } from './pages/products';
-import { CategoriesPage } from './pages/categories';
-import { CustomersPage } from './pages/customers';
-import { OrdersPage } from './pages/orders';
-import { 
-  HomePage, 
-  ProductsListPage, 
-  ProductPage, 
-  CartPage, 
-  CheckoutPage 
-} from './pages/marketplace';
-import { 
-  SellerLayout, 
-  SellerDashboard, 
-  SellerProducts, 
-  SellerOrders,
-  SellerAnalytics,
-  SellerSettings
-} from './pages/seller';
-import { useAuthStore } from './store';
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { StorefrontLayout } from "@/components/layout/StorefrontLayout";
+import { AdminLayout } from "@/components/layout/AdminLayout";
+import { Toaster } from "@/components/Toaster";
+import { RequireAuth, RequireAdmin } from "@/components/auth/Guards";
+import { HomePage } from "@/pages/storefront/HomePage";
+import { ProductsPage } from "@/pages/storefront/ProductsPage";
+import { ProductDetailPage } from "@/pages/storefront/ProductDetailPage";
+import { CartPage } from "@/pages/storefront/CartPage";
+import { CheckoutPage } from "@/pages/storefront/CheckoutPage";
+import { OrderSuccessPage } from "@/pages/storefront/OrderSuccessPage";
+import { LoginPage } from "@/pages/auth/LoginPage";
+import { RegisterPage } from "@/pages/auth/RegisterPage";
+import { MyOrdersPage } from "@/pages/account/MyOrdersPage";
+import { OrderDetailPage } from "@/pages/account/OrderDetailPage";
+import { ProfilePage } from "@/pages/account/ProfilePage";
+import { NotFoundPage } from "@/pages/NotFoundPage";
+import { AdminDashboardPage } from "@/pages/admin/AdminDashboardPage";
+import { AdminProductsPage } from "@/pages/admin/AdminProductsPage";
+import { AdminCategoriesPage } from "@/pages/admin/AdminCategoriesPage";
+import { AdminOrdersPage } from "@/pages/admin/AdminOrdersPage";
+import { AdminCustomersPage } from "@/pages/admin/AdminCustomersPage";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
-function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuthStore();
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
-}
-
-function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuthStore();
-  return !isAuthenticated ? <>{children}</> : <Navigate to="/admin" replace />;
-}
-
-function App() {
+export default function App() {
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <Toaster position="top-right" richColors />
-        <BrowserRouter>
-          <div className="flex min-h-screen w-full flex-col">
-            <Routes>
-            {/* Public Auth Routes */}
-            <Route
-              path="/login"
-              element={
-                <PublicRoute>
-                  <LoginPage />
-                </PublicRoute>
-              }
-            />
-            <Route
-              path="/register"
-              element={
-                <PublicRoute>
-                  <RegisterPage />
-                </PublicRoute>
-              }
-            />
-
-            {/* Marketplace (Public) Routes */}
-            <Route element={<MarketplaceLayout />}>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/products" element={<ProductsListPage />} />
-              <Route path="/product/:id" element={<ProductPage />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route
-                path="/checkout"
-                element={
-                  <PrivateRoute>
-                    <CheckoutPage />
-                  </PrivateRoute>
-                }
-              />
-            </Route>
-
-            {/* Seller Panel (Protected) Routes */}
-            <Route
-              path="/seller"
-              element={
-                <PrivateRoute>
-                  <SellerLayout />
-                </PrivateRoute>
-              }
-            >
-              <Route index element={<SellerDashboard />} />
-              <Route path="products" element={<SellerProducts />} />
-              <Route path="orders" element={<SellerOrders />} />
-              <Route path="analytics" element={<SellerAnalytics />} />
-              <Route path="settings" element={<SellerSettings />} />
-            </Route>
-
-            {/* Admin Panel (Protected) Routes */}
-            <Route
-              path="/admin"
-              element={
-                <PrivateRoute>
-                  <MainLayout />
-                </PrivateRoute>
-              }
-            >
-              <Route index element={<DashboardPage />} />
-              <Route path="products" element={<ProductsPage />} />
-              <Route path="categories" element={<CategoriesPage />} />
-              <Route path="customers" element={<CustomersPage />} />
-              <Route path="orders" element={<OrdersPage />} />
-            </Route>
-
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-          </div>
-        </BrowserRouter>
-      </QueryClientProvider>
-    </ErrorBoundary>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<StorefrontLayout />}>
+          {/* Loja pública */}
+          <Route index element={<HomePage />} />
+          <Route path="produtos" element={<ProductsPage />} />
+          <Route path="produtos/:id" element={<ProductDetailPage />} />
+          <Route path="carrinho" element={<CartPage />} />
+          {/* Autenticação */}
+          <Route path="login" element={<LoginPage />} />
+          <Route path="registro" element={<RegisterPage />} />
+          {/* Exigem sessão */}
+          <Route
+            path="checkout"
+            element={
+              <RequireAuth>
+                <CheckoutPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="pedido/:id/sucesso"
+            element={
+              <RequireAuth>
+                <OrderSuccessPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="conta/pedidos"
+            element={
+              <RequireAuth>
+                <MyOrdersPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="conta/pedidos/:id"
+            element={
+              <RequireAuth>
+                <OrderDetailPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="conta/perfil"
+            element={
+              <RequireAuth>
+                <ProfilePage />
+              </RequireAuth>
+            }
+          />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+        {/* Painel administrativo — somente ADMIN (SELLER recebe 403 da API). */}
+        <Route
+          path="admin"
+          element={
+            <RequireAdmin>
+              <AdminLayout />
+            </RequireAdmin>
+          }
+        >
+          <Route index element={<AdminDashboardPage />} />
+          <Route path="produtos" element={<AdminProductsPage />} />
+          <Route path="categorias" element={<AdminCategoriesPage />} />
+          <Route path="pedidos" element={<AdminOrdersPage />} />
+          <Route path="clientes" element={<AdminCustomersPage />} />
+        </Route>
+      </Routes>
+      <Toaster />
+    </BrowserRouter>
   );
 }
-
-export default App;
