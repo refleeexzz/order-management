@@ -1,54 +1,92 @@
-import type { InputHTMLAttributes } from 'react';
-import { forwardRef } from 'react';
-import { cn } from '../../lib/utils';
+import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes, type SelectHTMLAttributes, type ReactNode } from "react";
+import { AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  error?: string;
-  icon?: React.ReactNode;
+const baseFieldClasses =
+  "w-full rounded-md border border-zinc-300 bg-white px-3 text-base text-zinc-900 placeholder:text-zinc-400 transition-colors duration-150 hover:border-zinc-400 focus:border-brand disabled:cursor-not-allowed disabled:bg-zinc-50 disabled:text-zinc-500 aria-invalid:border-error";
+
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+  invalid?: boolean;
 }
 
-export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, icon, id, ...props }, ref) => {
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
+  { invalid, className, ...props },
+  ref,
+) {
+  return (
+    <input
+      ref={ref}
+      aria-invalid={invalid || undefined}
+      className={cn(baseFieldClasses, "h-9", className)}
+      {...props}
+    />
+  );
+});
+
+export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+  invalid?: boolean;
+}
+
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
+  function Textarea({ invalid, className, ...props }, ref) {
     return (
-      <div className="w-full space-y-1.5">
-        {label && (
-          <label htmlFor={id} className="block text-sm font-medium text-surface-700">
-            {label}
-          </label>
-        )}
-        <div className="relative">
-          {icon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-400 pointer-events-none [&>svg]:w-4 [&>svg]:h-4">
-              {icon}
-            </div>
-          )}
-          <input
-            ref={ref}
-            id={id}
-            className={cn(
-              'w-full h-10 px-3 py-2 border-2 rounded-xl bg-white placeholder-surface-400 text-surface-900 text-sm',
-              'transition-all duration-200',
-              'focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10',
-              'disabled:bg-surface-100 disabled:cursor-not-allowed disabled:text-surface-400',
-              error ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : 'border-surface-200 hover:border-surface-300',
-              icon && 'pl-10',
-              className
-            )}
-            {...props}
-          />
-        </div>
-        {error && (
-          <p className="text-xs text-red-500 flex items-center gap-1.5 mt-1">
-            <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </svg>
-            {error}
-          </p>
-        )}
-      </div>
+      <textarea
+        ref={ref}
+        aria-invalid={invalid || undefined}
+        className={cn(baseFieldClasses, "min-h-20 py-2", className)}
+        {...props}
+      />
     );
-  }
+  },
 );
 
-Input.displayName = 'Input';
+export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
+  invalid?: boolean;
+}
+
+export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
+  { invalid, className, children, ...props },
+  ref,
+) {
+  return (
+    <select
+      ref={ref}
+      aria-invalid={invalid || undefined}
+      className={cn(baseFieldClasses, "h-9 pr-8", className)}
+      {...props}
+    >
+      {children}
+    </select>
+  );
+});
+
+export interface FieldProps {
+  label: ReactNode;
+  htmlFor: string;
+  required?: boolean;
+  error?: string;
+  hint?: string;
+  children: ReactNode;
+}
+
+/** Rótulo visível + erro inline acessível (aria-describedby apontando para a mensagem). */
+export function Field({ label, htmlFor, required, error, hint, children }: FieldProps) {
+  const errorId = `${htmlFor}-error`;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={htmlFor} className="text-sm font-medium text-zinc-700">
+        {label}
+        {required && <span className="ml-0.5 text-error" aria-hidden>*</span>}
+      </label>
+      {children}
+      {error ? (
+        <p id={errorId} role="alert" className="flex items-center gap-1 text-xs text-error">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          {error}
+        </p>
+      ) : hint ? (
+        <p className="text-xs text-zinc-500">{hint}</p>
+      ) : null}
+    </div>
+  );
+}

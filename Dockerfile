@@ -1,37 +1,40 @@
-# Backend Dockerfile - Spring Boot Application
+# Backend Dockerfile - Go Application
 # Multi-stage build for optimized image size
 
 # Stage 1: Build
-FROM eclipse-temurin:21-jdk-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
-# Install Maven directly (more reliable than wrapper)
-RUN apk add --no-cache maven
-
-# Copy pom.xml first for dependency caching
-COPY pom.xml .
+# Copy go.mod/go.sum first for dependency caching
+COPY go.mod go.sum ./
 
 # Download dependencies (cached layer)
-RUN mvn dependency:go-offline -B
+RUN go mod download
 
 # Copy source code
-COPY src ./src
+COPY api ./api
+COPY cmd ./cmd
+COPY internal ./internal
+COPY migrations ./migrations
 
-# Build the application
-RUN mvn clean package -DskipTests -B
+# Build a static, stripped binary (migrations are embedded at build time)
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/server ./cmd/api
 
 # Stage 2: Runtime
-FROM eclipse-temurin:21-jre-alpine AS runtime
+FROM alpine:3.20 AS runtime
 
 WORKDIR /app
+
+# TLS roots (outbound HTTPS) and timezone data
+RUN apk add --no-cache ca-certificates tzdata
 
 # Add non-root user for security
 RUN addgroup -g 1001 -S appgroup && \
     adduser -u 1001 -S appuser -G appgroup
 
-# Copy the built JAR from builder stage
-COPY --from=builder /app/target/*.jar app.jar
+# Copy the built binary from builder stage
+COPY --from=builder /app/server /app/server
 
 # Change ownership to non-root user
 RUN chown -R appuser:appgroup /app
@@ -45,8 +48,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
 
-# JVM optimizations for containers
-ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0"
-
-# Run the application
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+# Run the application (database migrations run automatically at boot)
+ENTRYPOINT ["/app/server"]

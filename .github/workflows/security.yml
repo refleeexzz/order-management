@@ -16,32 +16,22 @@ jobs:
   # Dependency Scanning
   # ============================================
   backend-security:
-    name: Backend - Dependency Check
+    name: Backend - Vulnerability Check
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: maven
+          go-version: '1.23'
+          cache: true
 
-      - name: OWASP Dependency Check
-        run: |
-          ./mvnw org.owasp:dependency-check-maven:check -B || true
+      - name: Run govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
         continue-on-error: true
-
-      - name: Upload Dependency Check Report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: dependency-check-report
-          path: target/dependency-check-report.html
-          retention-days: 30
 
   frontend-security:
     name: Frontend - NPM Audit
@@ -144,7 +134,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: ['java', 'javascript']
+        language: ['go', 'javascript']
 
     steps:
       - name: Checkout code
@@ -155,16 +145,15 @@ jobs:
         with:
           languages: ${{ matrix.language }}
 
-      - name: Set up JDK 21 (for Java)
-        if: matrix.language == 'java'
-        uses: actions/setup-java@v4
+      - name: Set up Go (for Go)
+        if: matrix.language == 'go'
+        uses: actions/setup-go@v5
         with:
-          java-version: '21'
-          distribution: 'temurin'
+          go-version: '1.23'
 
-      - name: Build Java code
-        if: matrix.language == 'java'
-        run: ./mvnw compile -DskipTests -B
+      - name: Build Go code
+        if: matrix.language == 'go'
+        run: go build ./...
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
